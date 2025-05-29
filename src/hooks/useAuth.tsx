@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { supabase } from '../config/supabase'
-import type { AuthState, AuthUser, AuthCredentials } from '../types/auth'
+import type { AuthState, AuthCredentials } from '../types/auth'
 
 interface AuthContextType extends AuthState {
   signIn: (credentials: AuthCredentials) => Promise<void>
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_, session) => {
         setState(prev => ({
           ...prev,
           user: session?.user ? {

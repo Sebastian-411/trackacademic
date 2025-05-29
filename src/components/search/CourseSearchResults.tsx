@@ -127,7 +127,7 @@ export function CourseSearchResults({
                   <div className="text-sm text-gray-600">
                     <span className="font-medium">👨‍🏫 Profesores:</span>
                     <div className="mt-1 space-y-1">
-                      {result.professors.slice(0, 3).map((professor, idx) => (
+                      {result.professors.slice(0, 3).map((professor) => (
                         <div key={professor.id} className="text-xs">
                           {professor.first_name} {professor.last_name}
                         </div>

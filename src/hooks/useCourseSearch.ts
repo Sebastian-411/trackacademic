@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AcademicService } from '../lib/academicService'
-import type { SearchState, SearchFilters, Faculty, Area, Program, Employee, PaginationInfo } from '../types/academic'
+import type { SearchState, SearchFilters, Faculty, Area, Program, Employee } from '../types/academic'
 
 export function useCourseSearch() {
   const [state, setState] = useState<SearchState>({

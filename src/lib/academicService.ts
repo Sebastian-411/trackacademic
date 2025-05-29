@@ -1,15 +1,12 @@
 import { supabase } from '../config/supabase'
 import type { 
-  Subject, 
   Program, 
   Area, 
   Faculty, 
   Employee, 
-  Group, 
   SearchFilters, 
   CourseSearchResult,
   PaginatedSearchResult,
-  PaginationInfo
 } from '../types/academic'
 
 export class AcademicService {
@@ -528,7 +525,7 @@ export class AcademicService {
         .order('last_name')
 
       if (error) throw error
-      return data || []
+      return data as Employee[] || []
     } catch (error) {
       console.error('Error fetching professors:', error)
       throw error
