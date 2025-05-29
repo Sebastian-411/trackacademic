@@ -1,0 +1,502 @@
+<%- include('../layouts/main', { 
+    body: `
+        <div class="container-fluid py-4">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="/dashboard" class="text-decoration-none">
+                                    <i class="bi bi-house"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="/grades" class="text-decoration-none">Mis Calificaciones</a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">${grade.subjectCode}</li>
+                        </ol>
+                    </nav>
+                    <h1 class="h2 mb-0">
+                        <i class="bi bi-clipboard-data me-2 text-primary"></i>
+                        Calificaciones - ${grade.subjectCode}
+                    </h1>
+                </div>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <a href="/evaluation-plans/${grade.evaluationPlanId._id}" class="btn btn-outline-info">
+                            <i class="bi bi-clipboard-check me-1"></i>Ver Plan
+                        </a>
+                        <button type="button" class="btn btn-outline-success" onclick="showProjections()">
+                            <i class="bi bi-graph-up me-1"></i>Proyecciones
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" onclick="exportGrade()">
+                            <i class="bi bi-download me-1"></i>Exportar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade Overview -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-info-circle me-2"></i>Información General
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Materia:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="fw-bold">${grade.subjectCode}</span>
+                                            ${grade.subjectName ? `<br><small class="text-muted">${grade.subjectName}</small>` : ''}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Semestre:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="fw-bold">${grade.semester}</span>
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Nota Actual:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="fs-4 fw-bold ${(grade.currentGrade || 0) >= 3.0 ? 'text-success' : 'text-warning'}">
+                                                ${(grade.currentGrade || 0).toFixed(2)}
+                                            </span>
+                                        </dd>
+                                    </dl>
+                                </div>
+                                <div class="col-md-6">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Progreso:</dt>
+                                        <dd class="col-sm-8">
+                                            ${(() => {
+                                                const completed = grade.activities.filter(a => a.score !== null && a.score !== undefined).length;
+                                                const total = grade.activities.length;
+                                                const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+                                                return `
+                                                    <div class="progress mb-2" style="height: 8px;">
+                                                        <div class="progress-bar ${percent === 100 ? 'bg-success' : 'bg-primary'}" 
+                                                             style="width: ${percent}%"></div>
+                                                    </div>
+                                                    <small class="text-muted">${completed} de ${total} actividades completadas (${percent}%)</small>
+                                                `;
+                                            })()}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Nota Final:</dt>
+                                        <dd class="col-sm-8">
+                                            ${grade.finalGrade ? `
+                                                <span class="fs-4 fw-bold ${grade.finalGrade >= 3.0 ? 'text-success' : 'text-danger'}">
+                                                    ${grade.finalGrade.toFixed(2)}
+                                                </span>
+                                                <br>
+                                                <span class="badge ${grade.finalGrade >= 3.0 ? 'bg-success' : 'bg-danger'}">
+                                                    ${grade.finalGrade >= 3.0 ? 'APROBADA' : 'REPROBADA'}
+                                                </span>
+                                            ` : `
+                                                <span class="text-muted">Pendiente</span>
+                                                <br>
+                                                <span class="badge bg-warning">EN PROGRESO</span>
+                                            `}
+                                        </dd>
+                                        
+                                        <dt class="col-sm-4">Estado:</dt>
+                                        <dd class="col-sm-8">
+                                            <span class="badge ${grade.isComplete ? 'bg-primary' : 'bg-secondary'} fs-6">
+                                                ${grade.isComplete ? 'Completada' : 'En Progreso'}
+                                            </span>
+                                        </dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activities Details -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-check me-2"></i>Detalle de Actividades
+                            </h5>
+                            <span class="badge bg-primary">${grade.activities.length} actividades</span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="40">#</th>
+                                            <th>Actividad</th>
+                                            <th>Tipo</th>
+                                            <th class="text-center" width="120">Porcentaje</th>
+                                            <th class="text-center" width="120">Calificación</th>
+                                            <th class="text-center" width="120">Nota Ponderada</th>
+                                            <th class="text-center" width="120">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${grade.activities.map((activity, index) => {
+                                            const hasScore = activity.score !== null && activity.score !== undefined;
+                                            const weightedScore = hasScore ? (activity.score * activity.percentage / 100) : 0;
+                                            
+                                            let statusBadge = 'bg-secondary';
+                                            let statusText = 'Pendiente';
+                                            
+                                            if (hasScore) {
+                                                if (activity.score >= 3.0) {
+                                                    statusBadge = 'bg-success';
+                                                    statusText = 'Aprobada';
+                                                } else {
+                                                    statusBadge = 'bg-danger';
+                                                    statusText = 'Reprobada';
+                                                }
+                                            }
+                                            
+                                            return `
+                                                <tr ${hasScore ? '' : 'class="table-warning"'}>
+                                                    <td class="text-center text-muted fw-bold">${index + 1}</td>
+                                                    <td>
+                                                        <div class="fw-medium">${activity.name}</div>
+                                                        ${activity.description ? `
+                                                            <small class="text-muted">${activity.description}</small>
+                                                        ` : ''}
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-secondary">${activity.type}</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="fw-bold text-primary">${activity.percentage}%</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        ${hasScore ? `
+                                                            <span class="fw-bold ${activity.score >= 3.0 ? 'text-success' : 'text-danger'}">
+                                                                ${activity.score.toFixed(2)}
+                                                            </span>
+                                                        ` : '<span class="text-muted">--</span>'}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        ${hasScore ? `
+                                                            <span class="fw-bold text-info">
+                                                                ${weightedScore.toFixed(2)}
+                                                            </span>
+                                                        ` : '<span class="text-muted">--</span>'}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge ${statusBadge}">${statusText}</span>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="4" class="text-end fw-bold">Total Ponderado:</td>
+                                            <td class="text-center">
+                                                <span class="fw-bold fs-5 text-primary">
+                                                    ${grade.activities
+                                                        .filter(a => a.score !== null && a.score !== undefined)
+                                                        .reduce((sum, a) => sum + a.percentage, 0)}%
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="fw-bold fs-5 ${(grade.currentGrade || 0) >= 3.0 ? 'text-success' : 'text-warning'}">
+                                                    ${(grade.currentGrade || 0).toFixed(2)}
+                                                </span>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade History Chart -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-graph-up me-2"></i>Evolución de la Calificación
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="gradeProgressChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Grade Distribution -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-pie-chart me-2"></i>Distribución por Tipo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="activityTypeChart" width="300" height="300"></canvas>
+                            
+                            <!-- Statistics -->
+                            <div class="mt-3">
+                                ${(() => {
+                                    const types = {};
+                                    grade.activities.forEach(activity => {
+                                        if (!types[activity.type]) {
+                                            types[activity.type] = { count: 0, percentage: 0, avgScore: 0, scores: [] };
+                                        }
+                                        types[activity.type].count++;
+                                        types[activity.type].percentage += activity.percentage;
+                                        if (activity.score !== null && activity.score !== undefined) {
+                                            types[activity.type].scores.push(activity.score);
+                                        }
+                                    });
+                                    
+                                    Object.keys(types).forEach(type => {
+                                        const scores = types[type].scores;
+                                        types[type].avgScore = scores.length > 0 
+                                            ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
+                                            : 0;
+                                    });
+                                    
+                                    return Object.entries(types).map(([type, data]) => `
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div>
+                                                <small class="fw-medium">${type}</small>
+                                                <br>
+                                                <small class="text-muted">${data.count} actividades - ${data.percentage}%</small>
+                                            </div>
+                                            <span class="badge ${data.avgScore >= 3.0 ? 'bg-success' : 'bg-warning'}">
+                                                ${data.avgScore > 0 ? data.avgScore.toFixed(2) : '--'}
+                                            </span>
+                                        </div>
+                                    `).join('');
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-calculator me-2"></i>Cálculo de Nota
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Fórmula:</strong> Nota = Σ(Calificación × Porcentaje)
+                            </div>
+                            
+                            <h6>Actividades Calificadas:</h6>
+                            <ul class="list-unstyled">
+                                ${grade.activities
+                                    .filter(a => a.score !== null && a.score !== undefined)
+                                    .map(activity => `
+                                        <li class="mb-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span>${activity.name}</span>
+                                                <span class="fw-medium">
+                                                    ${activity.score.toFixed(2)} × ${activity.percentage}% = 
+                                                    ${(activity.score * activity.percentage / 100).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </li>
+                                    `).join('')}
+                            </ul>
+                            
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Nota Actual:</span>
+                                <span class="${(grade.currentGrade || 0) >= 3.0 ? 'text-success' : 'text-warning'}">
+                                    ${(grade.currentGrade || 0).toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Actividades Pendientes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            ${(() => {
+                                const pending = grade.activities.filter(a => a.score === null || a.score === undefined);
+                                if (pending.length === 0) {
+                                    return `
+                                        <div class="text-center py-3">
+                                            <i class="bi bi-check-circle text-success mb-2" style="font-size: 2rem;"></i>
+                                            <h6 class="text-success">¡Todas las actividades calificadas!</h6>
+                                            <small class="text-muted">No hay actividades pendientes por calificar.</small>
+                                        </div>
+                                    `;
+                                }
+                                
+                                return `
+                                    <ul class="list-group list-group-flush">
+                                        ${pending.map(activity => `
+                                            <li class="list-group-item px-0 py-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div class="fw-medium">${activity.name}</div>
+                                                        <small class="text-muted">${activity.type}</small>
+                                                    </div>
+                                                    <span class="badge bg-warning">${activity.percentage}%</span>
+                                                </div>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                    <div class="mt-3 text-center">
+                                        <small class="text-muted">
+                                            Porcentaje pendiente: ${pending.reduce((sum, a) => sum + a.percentage, 0)}%
+                                        </small>
+                                    </div>
+                                `;
+                            })()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                initCharts();
+            });
+
+            function initCharts() {
+                // Gráfico de evolución de calificación
+                const gradeData = ${JSON.stringify(grade.activities)};
+                const ctx1 = document.getElementById('gradeProgressChart').getContext('2d');
+                
+                // Crear datos acumulativos
+                let cumulativeGrade = 0;
+                let cumulativePercentage = 0;
+                const progressData = [];
+                
+                gradeData.forEach((activity, index) => {
+                    if (activity.score !== null && activity.score !== undefined) {
+                        cumulativeGrade += activity.score * activity.percentage / 100;
+                        cumulativePercentage += activity.percentage;
+                        
+                        const currentAverage = cumulativePercentage > 0 ? (cumulativeGrade * 100 / cumulativePercentage) : 0;
+                        progressData.push({
+                            x: index + 1,
+                            y: currentAverage
+                        });
+                    }
+                });
+                
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        datasets: [{
+                            label: 'Evolución de Nota',
+                            data: progressData,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }, {
+                            label: 'Nota Mínima (3.0)',
+                            data: progressData.map(p => ({x: p.x, y: 3.0})),
+                            borderColor: 'rgb(255, 99, 132)',
+                            borderDash: [5, 5],
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 5,
+                                ticks: {
+                                    stepSize: 0.5
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Actividades Calificadas'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top'
+                            }
+                        }
+                    }
+                });
+
+                // Gráfico de distribución por tipo
+                const typeData = {};
+                gradeData.forEach(activity => {
+                    if (!typeData[activity.type]) {
+                        typeData[activity.type] = 0;
+                    }
+                    typeData[activity.type] += activity.percentage;
+                });
+
+                const ctx2 = document.getElementById('activityTypeChart').getContext('2d');
+                const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'];
+                
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(typeData),
+                        datasets: [{
+                            data: Object.values(typeData),
+                            backgroundColor: colors.slice(0, Object.keys(typeData).length),
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    usePointStyle: true
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function showProjections() {
+                alert('Funcionalidad de proyecciones específicas pendiente de implementación');
+                // TODO: Implementar proyecciones específicas para esta materia
+            }
+
+            function exportGrade() {
+                alert('Funcionalidad de exportación pendiente de implementación');
+                // TODO: Implementar exportación de calificaciones de la materia
+            }
+        </script>
+    `
+}) %> 

@@ -1,0 +1,335 @@
+<%- include('../layouts/main', { 
+    body: `
+        <div class="container-fluid py-4">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="bi bi-clipboard-check me-2 text-primary"></i>Planes de Evaluación
+                </h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        ${['professor', 'coordinator', 'admin', 'student'].includes(user.role) ? `
+                            <button type="button" class="btn btn-sm btn-primary" onclick="alert('Funcionalidad de creación pendiente')">
+                                <i class="bi bi-plus-circle me-1"></i>Nuevo Plan
+                            </button>
+                        ` : ''}
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="GET" id="filtersForm">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-md-3">
+                                        <label for="semester" class="form-label">
+                                            <i class="bi bi-calendar me-1"></i>Semestre
+                                        </label>
+                                        <select class="form-select" id="semester" name="semester">
+                                            <option value="">Todos los semestres</option>
+                                            <option value="2024-1" ${filters.semester === '2024-1' ? 'selected' : ''}>2024-1</option>
+                                            <option value="2024-2" ${filters.semester === '2024-2' ? 'selected' : ''}>2024-2</option>
+                                            <option value="2023-2" ${filters.semester === '2023-2' ? 'selected' : ''}>2023-2</option>
+                                            <option value="2023-1" ${filters.semester === '2023-1' ? 'selected' : ''}>2023-1</option>
+                                        </select>
+                                    </div>
+                                    
+                                    ${user.role !== 'student' ? `
+                                        <div class="col-md-3">
+                                            <label for="approved" class="form-label">
+                                                <i class="bi bi-check-circle me-1"></i>Estado
+                                            </label>
+                                            <select class="form-select" id="approved" name="approved">
+                                                <option value="">Todos los estados</option>
+                                                <option value="true" ${filters.approved === 'true' ? 'selected' : ''}>Aprobados</option>
+                                                <option value="false" ${filters.approved === 'false' ? 'selected' : ''}>Pendientes</option>
+                                            </select>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    <div class="col-md-3">
+                                        <label for="search" class="form-label">
+                                            <i class="bi bi-search me-1"></i>Buscar
+                                        </label>
+                                        <input type="text" class="form-control" id="search" name="search" 
+                                               placeholder="Código de materia..." value="${filters.search || ''}">
+                                    </div>
+                                    
+                                    <div class="col-md-3">
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-funnel me-1"></i>Filtrar
+                                            </button>
+                                            <a href="/evaluation-plans" class="btn btn-outline-secondary">
+                                                <i class="bi bi-x-circle me-1"></i>Limpiar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Summary -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">
+                                ${pagination.total} planes encontrados
+                                ${filters.semester || filters.approved || filters.search ? 
+                                    '<small class="text-muted">(filtrados)</small>' : ''}
+                            </h5>
+                        </div>
+                        <div>
+                            <small class="text-muted">
+                                Página ${pagination.page} de ${pagination.pages}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plans List -->
+            <div class="row">
+                <div class="col-12">
+                    ${plans && plans.length > 0 ? `
+                        <div class="card">
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Materia</th>
+                                                <th>Profesor</th>
+                                                <th>Grupo</th>
+                                                <th>Semestre</th>
+                                                <th class="text-center">Actividades</th>
+                                                <th class="text-center">Estado</th>
+                                                <th class="text-center">Fecha</th>
+                                                <th class="text-center">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${plans.map(plan => `
+                                                <tr>
+                                                    <td>
+                                                        <div>
+                                                            <div class="fw-semibold">${plan.subjectCode}</div>
+                                                            <small class="text-muted">${plan.subjectName || plan.subjectCode}</small>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div>
+                                                            <div class="fw-medium">${plan.professorName || 'No disponible'}</div>
+                                                            <small class="text-muted">${plan.professorId}</small>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-info">Grupo ${plan.groupNumber}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="fw-medium">${plan.semester}</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-secondary">${plan.activities.length}</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge ${plan.isApproved ? 'bg-success' : 'bg-warning'}">
+                                                            ${plan.isApproved ? 'Aprobado' : 'Pendiente'}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <small class="text-muted">
+                                                            ${new Date(plan.createdAt).toLocaleDateString('es-ES', {
+                                                                day: '2-digit',
+                                                                month: '2-digit',
+                                                                year: 'numeric'
+                                                            })}
+                                                        </small>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <div class="btn-group btn-group-sm" role="group">
+                                                            <a href="/evaluation-plans/${plan._id}" 
+                                                               class="btn btn-outline-primary" 
+                                                               data-bs-toggle="tooltip" 
+                                                               title="Ver detalles">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                            ${(user.role === 'professor' && plan.professorId === user.id && !plan.isApproved) || 
+                                                              (user.role === 'student' && plan.createdBy === user.id && !plan.isApproved) ? `
+                                                                <button class="btn btn-outline-warning" 
+                                                                        data-bs-toggle="tooltip" 
+                                                                        title="Editar plan"
+                                                                        onclick="alert('Funcionalidad de edición pendiente')">
+                                                                    <i class="bi bi-pencil"></i>
+                                                                </button>
+                                                            ` : ''}
+                                                            ${(user.role === 'coordinator' || user.role === 'admin') && !plan.isApproved ? `
+                                                                <button class="btn btn-outline-success" 
+                                                                        data-bs-toggle="tooltip" 
+                                                                        title="Aprobar plan"
+                                                                        onclick="approvePlan('${plan._id}')">
+                                                                    <i class="bi bi-check-lg"></i>
+                                                                </button>
+                                                            ` : ''}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pagination -->
+                        ${pagination.pages > 1 ? `
+                            <nav aria-label="Navegación de páginas" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    ${pagination.page > 1 ? `
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=${pagination.page - 1}${getQueryString()}">
+                                                <i class="bi bi-chevron-left"></i> Anterior
+                                            </a>
+                                        </li>
+                                    ` : `
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                <i class="bi bi-chevron-left"></i> Anterior
+                                            </span>
+                                        </li>
+                                    `}
+                                    
+                                    ${Array.from({length: Math.min(5, pagination.pages)}, (_, i) => {
+                                        const pageNum = Math.max(1, Math.min(pagination.pages - 4, pagination.page - 2)) + i;
+                                        if (pageNum <= pagination.pages) {
+                                            return `
+                                                <li class="page-item ${pageNum === pagination.page ? 'active' : ''}">
+                                                    <a class="page-link" href="?page=${pageNum}${getQueryString()}">${pageNum}</a>
+                                                </li>
+                                            `;
+                                        }
+                                        return '';
+                                    }).join('')}
+                                    
+                                    ${pagination.page < pagination.pages ? `
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=${pagination.page + 1}${getQueryString()}">
+                                                Siguiente <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    ` : `
+                                        <li class="page-item disabled">
+                                            <span class="page-link">
+                                                Siguiente <i class="bi bi-chevron-right"></i>
+                                            </span>
+                                        </li>
+                                    `}
+                                </ul>
+                            </nav>
+                        ` : ''}
+                    ` : `
+                        <!-- Empty State -->
+                        <div class="card">
+                            <div class="card-body text-center py-5">
+                                <i class="bi bi-clipboard-x text-muted mb-3" style="font-size: 4rem;"></i>
+                                <h4 class="text-muted mb-3">No se encontraron planes de evaluación</h4>
+                                ${filters.semester || filters.approved || filters.search ? `
+                                    <p class="text-muted mb-4">
+                                        Intenta ajustar los filtros para ver más resultados.
+                                    </p>
+                                    <a href="/evaluation-plans" class="btn btn-primary">
+                                        <i class="bi bi-funnel-fill me-2"></i>Quitar Filtros
+                                    </a>
+                                ` : `
+                                    <p class="text-muted mb-4">
+                                        ${user.role === 'student' ? 
+                                            'Aún no hay planes de evaluación disponibles para ti.' :
+                                            'Aún no hay planes de evaluación creados.'
+                                        }
+                                    </p>
+                                    ${['professor', 'coordinator', 'admin', 'student'].includes(user.role) ? `
+                                        <button class="btn btn-primary" onclick="alert('Funcionalidad de creación pendiente')">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear Primer Plan
+                                        </button>
+                                    ` : ''}
+                                `}
+                            </div>
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Función para construir query string manteniendo filtros
+            function getQueryString() {
+                const params = new URLSearchParams();
+                const semester = document.getElementById('semester').value;
+                const approved = document.getElementById('approved')?.value;
+                const search = document.getElementById('search').value;
+                
+                if (semester) params.set('semester', semester);
+                if (approved) params.set('approved', approved);
+                if (search) params.set('search', search);
+                
+                return params.toString() ? '&' + params.toString() : '';
+            }
+
+            // Función para aprobar plan
+            async function approvePlan(planId) {
+                if (!confirm('¿Estás seguro de que quieres aprobar este plan de evaluación?')) {
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(\`/api/evaluation-plans/\${planId}/approve\`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        trackademic.showToast('Plan aprobado exitosamente', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        const error = await response.json();
+                        trackademic.showToast(error.error || 'Error al aprobar el plan', 'error');
+                    }
+                } catch (error) {
+                    trackademic.showToast('Error de conexión', 'error');
+                }
+            }
+
+            // Auto-submit del formulario cuando cambian los filtros
+            document.addEventListener('DOMContentLoaded', function() {
+                const selects = document.querySelectorAll('#semester, #approved');
+                selects.forEach(select => {
+                    select.addEventListener('change', function() {
+                        // Pequeño delay para mejor UX
+                        setTimeout(() => {
+                            document.getElementById('filtersForm').submit();
+                        }, 100);
+                    });
+                });
+
+                // Búsqueda con enter
+                document.getElementById('search').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        document.getElementById('filtersForm').submit();
+                    }
+                });
+            });
+        </script>
+    `
+}) %> 

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+        <div class="row w-100">
+            <div class="col-md-8 col-lg-6 mx-auto">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body text-center p-5">
+                        <!-- Error Icon -->
+                        <div class="mb-4">
+                            <% if (error.status === 404) { %>
+                                <i class="bi bi-search text-primary" style="font-size: 5rem;"></i>
+                            <% } else if (error.status === 403) { %>
+                                <i class="bi bi-shield-exclamation text-warning" style="font-size: 5rem;"></i>
+                            <% } else if (error.status === 500) { %>
+                                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 5rem;"></i>
+                            <% } else { %>
+                                <i class="bi bi-exclamation-circle text-secondary" style="font-size: 5rem;"></i>
+                            <% } %>
+                        </div>
+
+                        <!-- Error Code -->
+                        <h1 class="display-4 fw-bold text-primary mb-3">
+                            <%= error.status || 500 %>
+                        </h1>
+
+                        <!-- Error Title -->
+                        <h2 class="h4 mb-3">
+                            <% if (error.status === 404) { %>
+                                Página no encontrada
+                            <% } else if (error.status === 403) { %>
+                                Acceso denegado
+                            <% } else if (error.status === 500) { %>
+                                Error interno del servidor
+                            <% } else { %>
+                                Ha ocurrido un error
+                            <% } %>
+                        </h2>
+
+                        <!-- Error Message -->
+                        <p class="text-muted mb-4">
+                            <%= error.message || 'Ha ocurrido un error inesperado. Por favor, intenta de nuevo.' %>
+                        </p>
+
+                        <!-- Error Suggestions -->
+                        <div class="row g-3 mb-4">
+                            <% if (error.status === 404) { %>
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h6 class="alert-heading">
+                                            <i class="bi bi-lightbulb me-2"></i>¿Qué puedes hacer?
+                                        </h6>
+                                        <ul class="mb-0 text-start">
+                                            <li>Verifica que la URL esté correcta</li>
+                                            <li>Utiliza el menú de navegación para encontrar lo que buscas</li>
+                                            <li>Regresa a la página principal</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            <% } else if (error.status === 403) { %>
+                                <div class="col-12">
+                                    <div class="alert alert-warning">
+                                        <h6 class="alert-heading">
+                                            <i class="bi bi-info-circle me-2"></i>Información
+                                        </h6>
+                                        <p class="mb-0">
+                                            No tienes permisos para acceder a este recurso. 
+                                            Si crees que esto es un error, contacta al administrador.
+                                        </p>
+                                    </div>
+                                </div>
+                            <% } else { %>
+                                <div class="col-12">
+                                    <div class="alert alert-secondary">
+                                        <h6 class="alert-heading">
+                                            <i class="bi bi-tools me-2"></i>Posibles soluciones
+                                        </h6>
+                                        <ul class="mb-0 text-start">
+                                            <li>Actualiza la página (F5)</li>
+                                            <li>Intenta de nuevo en unos minutos</li>
+                                            <li>Contacta al soporte técnico si el problema persiste</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex flex-wrap gap-3 justify-content-center">
+                            <% if (typeof user !== 'undefined' && user) { %>
+                                <a href="/dashboard" class="btn btn-primary">
+                                    <i class="bi bi-house me-2"></i>Ir al Dashboard
+                                </a>
+                                <button onclick="history.back()" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Página Anterior
+                                </button>
+                            <% } else { %>
+                                <a href="/" class="btn btn-primary">
+                                    <i class="bi bi-house me-2"></i>Página Principal
+                                </a>
+                                <a href="/login" class="btn btn-outline-primary">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                                </a>
+                            <% } %>
+                        </div>
+
+                        <!-- Contact Support -->
+                        <div class="mt-5 pt-4 border-top">
+                            <h6 class="text-muted mb-3">¿Necesitas ayuda?</h6>
+                            <div class="d-flex flex-wrap gap-3 justify-content-center">
+                                <a href="mailto:support@trackademic.com" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-envelope me-2"></i>Email Soporte
+                                </a>
+                                <a href="/api-docs" class="btn btn-sm btn-outline-secondary" target="_blank">
+                                    <i class="bi bi-file-text me-2"></i>Documentación
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Details (Development) -->
+                <% if (process.env.NODE_ENV !== 'production' && error.stack) { %>
+                    <div class="card mt-4 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0">
+                                <i class="bi bi-bug me-2"></i>Detalles del Error (Desarrollo)
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <details>
+                                <summary class="btn btn-sm btn-outline-danger mb-3">
+                                    Ver Stack Trace
+                                </summary>
+                                <pre class="bg-light p-3 rounded"><%= error.stack %></pre>
+                            </details>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Brand Footer -->
+    <div class="position-fixed bottom-0 start-0 p-3">
+        <small class="text-muted">
+            <i class="bi bi-mortarboard-fill me-1"></i>
+            <strong>Trackademic</strong>
+        </small>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-refresh for server errors after 30 seconds
+        <% if (error.status >= 500) { %>
+            setTimeout(() => {
+                const refreshBtn = document.createElement('button');
+                refreshBtn.className = 'btn btn-sm btn-success ms-2';
+                refreshBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Actualizar';
+                refreshBtn.onclick = () => location.reload();
+                
+                const buttonContainer = document.querySelector('.d-flex.flex-wrap.gap-3');
+                if (buttonContainer) {
+                    buttonContainer.appendChild(refreshBtn);
+                }
+            }, 30000);
+        <% } %>
+
+        // Add some interactive feedback
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate the error icon
+            const icon = document.querySelector('i[style*="font-size: 5rem"]');
+            if (icon) {
+                icon.style.animation = 'fadeIn 0.8s ease-in';
+            }
+            
+            // Add hover effects to buttons
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

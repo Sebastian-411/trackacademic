@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Trackademic - Sistema de Gestión de Notas Académicas">
+    <meta name="author" content="Trackademic Team">
+    <title><%= title %></title>
+    
+    <!-- Preconnect for faster loading -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js" integrity="sha384-7lPzZQfiaFIGIzOvvMQtOuGWOGK1QQDqyXa3mY3JdnHIbJj0FjxbZPxuDxWgGEA6" crossorigin="anonymous"></script>
+    
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎓</text></svg>">
+</head>
+<body class="<%= typeof user !== 'undefined' && user ? '' : 'auth-page' %>">
+    <% if (typeof user !== 'undefined' && user) { %>
+        <!-- Navbar para usuarios autenticados -->
+        <%- include('../partials/navbar') %>
+    <% } %>
+
+    <!-- Main Content -->
+    <main class="<%= typeof user !== 'undefined' && user ? 'main-content' : '' %>">
+        <!-- Alerts -->
+        <%- include('../partials/alerts') %>
+        
+        <!-- Page Content -->
+        <div class="fade-in">
+            <div class="container-fluid py-4">
+                <!-- Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1">
+                                    <i class="bi bi-search me-2"></i>Búsqueda de Cursos
+                                </h2>
+                                <p class="text-muted mb-0">Encuentra los cursos disponibles utilizando los filtros</p>
+                            </div>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-0">
+                                    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">Búsqueda de Cursos</li>
+                                </ol>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtros de Búsqueda -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-funnel me-2"></i>Filtros de Búsqueda
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="searchForm" method="GET" action="/courses/search">
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label for="search" class="form-label">Nombre o Código del Curso</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">
+                                                    <i class="bi bi-search"></i>
+                                                </span>
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="search" 
+                                                       name="search" 
+                                                       value="<%= searchParams.search %>" 
+                                                       placeholder="Ej: Cálculo, MATH101">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label for="professor" class="form-label">Profesor</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">
+                                                    <i class="bi bi-person"></i>
+                                                </span>
+                                                <input type="text" 
+                                                       class="form-control" 
+                                                       id="professor" 
+                                                       name="professor" 
+                                                       value="<%= searchParams.professor %>" 
+                                                       placeholder="Nombre del profesor">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-3">
+                                            <label for="semester" class="form-label">Semestre</label>
+                                            <select class="form-select" id="semester" name="semester">
+                                                <option value="">Todos los semestres</option>
+                                                <% semesters.forEach(sem => { %>
+                                                    <option value="<%= sem %>" <%= searchParams.semester === sem ? 'selected' : '' %>>
+                                                        <%= sem %>
+                                                    </option>
+                                                <% }); %>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-2">
+                                            <label class="form-label d-block">&nbsp;</label>
+                                            <div class="d-grid gap-1">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="bi bi-search me-1"></i>Buscar
+                                                </button>
+                                                <a href="/courses/search" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resultados -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-list-ul me-2"></i>Resultados de Búsqueda
+                                </h5>
+                                <span class="badge bg-primary"><%= subjects.length %> curso(s) encontrado(s)</span>
+                            </div>
+                            <div class="card-body">
+                                <% if (subjects.length > 0) { %>
+                                    <div class="row g-4">
+                                        <% subjects.forEach(subject => { %>
+                                            <% if (subject.groups && subject.groups.length > 0) { %>
+                                                <% subject.groups.forEach(group => { %>
+                                                    <div class="col-lg-6 col-xl-4">
+                                                        <div class="card h-100 border-0 shadow-sm hover-elevate">
+                                                            <div class="card-body">
+                                                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                                                    <div class="flex-grow-1">
+                                                                        <h6 class="card-title text-primary mb-1"><%= subject.code %></h6>
+                                                                        <h5 class="card-subtitle mb-2"><%= subject.name %></h5>
+                                                                    </div>
+                                                                    <span class="badge bg-light text-dark">Grupo <%= group.number %></span>
+                                                                </div>
+                                                                
+                                                                <div class="mb-3">
+                                                                    <div class="row g-2">
+                                                                        <div class="col-6">
+                                                                            <small class="text-muted d-block">Semestre</small>
+                                                                            <span class="fw-medium"><%= group.semester %></span>
+                                                                        </div>
+                                                                        <div class="col-6">
+                                                                            <small class="text-muted d-block">Grupo</small>
+                                                                            <span class="fw-medium"><%= group.number %></span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <% if (group.employees) { %>
+                                                                    <div class="mb-3">
+                                                                        <small class="text-muted d-block">Profesor</small>
+                                                                        <div class="d-flex align-items-center">
+                                                                            <i class="bi bi-person-circle me-2 text-primary"></i>
+                                                                            <span class="fw-medium">
+                                                                                <%= group.employees.first_name %> <%= group.employees.last_name %>
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                <% } %>
+                                                                
+                                                                <div class="mb-3">
+                                                                    <div class="row g-2">
+                                                                        <div class="col-6">
+                                                                            <small class="text-muted d-block">Código</small>
+                                                                            <span class="fw-medium"><%= subject.code %></span>
+                                                                        </div>
+                                                                        <div class="col-6">
+                                                                            <small class="text-muted d-block">Programa</small>
+                                                                            <span class="fw-medium"><%= subject.program_code %></span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="card-footer bg-transparent border-0 pt-0">
+                                                                <div class="d-flex gap-2">
+                                                                    <a href="/courses/<%= subject.code %>/<%= group.semester %>/<%= group.number %>/evaluation-plans" 
+                                                                       class="btn btn-primary flex-fill">
+                                                                        <i class="bi bi-clipboard-check me-1"></i>Ver Planes
+                                                                    </a>
+                                                                    <% if (user.role === 'student') { %>
+                                                                        <button class="btn btn-success add-to-my-courses" 
+                                                                                data-subject-code="<%= subject.code %>"
+                                                                                data-semester="<%= group.semester %>"
+                                                                                data-group-number="<%= group.number %>"
+                                                                                title="Agregar a Mis Materias">
+                                                                            <i class="bi bi-plus"></i>
+                                                                        </button>
+                                                                    <% } %>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <% }); %>
+                                            <% } %>
+                                        <% }); %>
+                                    </div>
+                                    
+                                    <!-- Paginación -->
+                                    <% if (pagination.hasPrev || pagination.hasNext) { %>
+                                        <nav aria-label="Navegación de páginas" class="mt-4">
+                                            <ul class="pagination justify-content-center">
+                                                <% if (pagination.hasPrev) { %>
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?search=<%= encodeURIComponent(searchParams.search) %>&professor=<%= encodeURIComponent(searchParams.professor) %>&semester=<%= encodeURIComponent(searchParams.semester) %>&page=<%= pagination.currentPage - 1 %>">
+                                                            <i class="bi bi-chevron-left"></i> Anterior
+                                                        </a>
+                                                    </li>
+                                                <% } %>
+                                                
+                                                <li class="page-item active">
+                                                    <span class="page-link">Página <%= pagination.currentPage %></span>
+                                                </li>
+                                                
+                                                <% if (pagination.hasNext) { %>
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?search=<%= encodeURIComponent(searchParams.search) %>&professor=<%= encodeURIComponent(searchParams.professor) %>&semester=<%= encodeURIComponent(searchParams.semester) %>&page=<%= pagination.currentPage + 1 %>">
+                                                            Siguiente <i class="bi bi-chevron-right"></i>
+                                                        </a>
+                                                    </li>
+                                                <% } %>
+                                            </ul>
+                                        </nav>
+                                    <% } %>
+                                <% } else { %>
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-search text-muted mb-3" style="font-size: 4rem;"></i>
+                                        <h4 class="text-muted mb-3">No se encontraron cursos</h4>
+                                        <p class="text-muted mb-4">
+                                            Intenta modificar los filtros de búsqueda o utilizar términos más generales.
+                                        </p>
+                                        <button onclick="clearFilters()" class="btn btn-primary">
+                                            <i class="bi bi-arrow-clockwise me-2"></i>Limpiar Filtros
+                                        </button>
+                                    </div>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <% if (typeof user !== 'undefined' && user) { %>
+        <!-- Footer -->
+        <%- include('../partials/footer') %>
+    <% } %>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/app.js"></script>
+    
+    <!-- Initialize tooltips and other Bootstrap components -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Initialize popovers
+            const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+        });
+        
+        function clearFilters() {
+            window.location.href = '/courses/search';
+        }
+        
+        // Auto-submit formulario en cambio de filtros
+        document.getElementById('semester').addEventListener('change', function() {
+            document.getElementById('searchForm').submit();
+        });
+
+        // Manejar agregar materia a mis cursos
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.add-to-my-courses')) {
+                e.preventDefault();
+                
+                const button = e.target.closest('.add-to-my-courses');
+                const subjectCode = button.dataset.subjectCode;
+                const semester = button.dataset.semester;
+                const groupNumber = button.dataset.groupNumber;
+                
+                // Buscar el plan de evaluación para este curso/grupo/semestre
+                fetch('/courses/' + subjectCode + '/' + semester + '/' + groupNumber + '/evaluation-plans')
+                    .then(response => response.text())
+                    .then(html => {
+                        // Crear un elemento temporal para extraer los IDs de planes
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = html;
+                        
+                        // Buscar si hay planes disponibles (esto es una implementación simple)
+                        // En una implementación real, necesitarías una API específica
+                        const planElements = tempDiv.querySelectorAll('[data-plan-id]');
+                        
+                        if (planElements.length > 0) {
+                            const planId = planElements[0].dataset.planId;
+                            addToMyCourses(planId, subjectCode, semester, groupNumber);
+                        } else {
+                            showAlert('warning', 'No hay planes de evaluación disponibles para este curso. Puedes crear uno desde la página de planes.');
+                            // Redirigir a la página de planes del curso
+                            window.location.href = '/courses/' + subjectCode + '/' + semester + '/' + groupNumber + '/evaluation-plans';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showAlert('error', 'Error al verificar los planes de evaluación');
+                    });
+            }
+        });
+
+        function addToMyCourses(evaluationPlanId, subjectCode, semester, groupNumber) {
+            fetch('/api/my-courses/add-from-catalog', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ evaluationPlanId: evaluationPlanId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message);
+                    
+                    // Mostrar opción para ir a mis materias
+                    setTimeout(function() {
+                        if (confirm('¿Quieres ir a "Mis Materias" para ver la materia agregada?')) {
+                            window.location.href = '/my-courses';
+                        }
+                    }, 1500);
+                } else {
+                    showAlert('error', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Error al agregar la materia');
+            });
+        }
+
+        function showAlert(type, message) {
+            const alertClass = type === 'error' ? 'alert-danger' : type === 'warning' ? 'alert-warning' : 'alert-success';
+            const alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                '</div>';
+            
+            // Insertar al inicio de la página
+            const container = document.querySelector('.container-fluid');
+            container.insertAdjacentHTML('afterbegin', alertHtml);
+            
+            // Auto-eliminar después de 5 segundos
+            setTimeout(function() {
+                const alert = container.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+
+    <style>
+        .hover-elevate {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .hover-elevate:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+        
+        .card-footer {
+            border-top: 1px solid var(--bs-border-color-translucent) !important;
+        }
+    </style>
+</body>
+</html>

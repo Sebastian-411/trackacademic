@@ -1,0 +1,154 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="/dashboard">
+            <i class="bi bi-mortarboard-fill me-2"></i>Trackademic
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">
+                        <i class="bi bi-house-fill me-1"></i>Dashboard
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="/courses/search">
+                        <i class="bi bi-search me-1"></i>Buscar Cursos
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="/evaluation-plans">
+                        <i class="bi bi-clipboard-check me-1"></i>Planes de Evaluación
+                    </a>
+                </li>
+                
+                <% if (['professor', 'coordinator', 'admin', 'student'].includes(user.role)) { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/create-evaluation-plan">
+                            <i class="bi bi-plus-circle me-1"></i>Crear Plan
+                        </a>
+                    </li>
+                <% } %>
+                
+                <% if (user.role === 'student') { %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/grades">
+                            <i class="bi bi-graph-up me-1"></i>Mis Calificaciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports">
+                            <i class="bi bi-file-earmark-bar-graph me-1"></i>Informes
+                        </a>
+                    </li>
+                <% } %>
+                
+                <% if (['professor', 'coordinator', 'admin'].includes(user.role)) { %>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-tools me-1"></i>Administración
+                        </a>
+                        <ul class="dropdown-menu">
+                            <% if (user.role === 'professor') { %>
+                                <li><a class="dropdown-item" href="/evaluation-plans?professorId=<%= user.id %>">
+                                    <i class="bi bi-file-plus me-2"></i>Mis Planes
+                                </a></li>
+                            <% } %>
+                            <% if (['coordinator', 'admin'].includes(user.role)) { %>
+                                <li><a class="dropdown-item" href="/admin">
+                                    <i class="bi bi-gear me-2"></i>Panel de Control
+                                </a></li>
+                                <li><a class="dropdown-item" href="/evaluation-plans?approved=false">
+                                    <i class="bi bi-clock me-2"></i>Pendientes de Aprobación
+                                </a></li>
+                            <% } %>
+                        </ul>
+                    </li>
+                <% } %>
+            </ul>
+            
+            <!-- User Menu -->
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle me-1"></i>
+                        <%= user.firstName ? `${user.firstName} ${user.lastName}` : user.email %>
+                        <span class="badge bg-light text-primary ms-1"><%= user.role %></span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <h6 class="dropdown-header">
+                                <i class="bi bi-person-badge me-2"></i>
+                                <%= user.firstName ? `${user.firstName} ${user.lastName}` : 'Usuario' %>
+                            </h6>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <span class="dropdown-item-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-envelope me-1"></i><%= user.email %>
+                                </small>
+                            </span>
+                        </li>
+                        <% if (user.facultyName) { %>
+                            <li>
+                                <span class="dropdown-item-text">
+                                    <small class="text-muted">
+                                        <i class="bi bi-building me-1"></i><%= user.facultyName %>
+                                    </small>
+                                </span>
+                            </li>
+                        <% } %>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form action="/logout" method="POST" class="d-inline">
+                                <button type="submit" class="dropdown-item text-danger">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- Student Menu -->
+            <% if (user.role === 'student') { %>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownStudent" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i> Estudiante
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdownStudent">
+                    <li><a class="dropdown-item" href="/my-courses">
+                        <i class="bi bi-journal-text"></i> Mis Materias
+                    </a></li>
+                    <li><a class="dropdown-item" href="/my-semester-summary">
+                        <i class="bi bi-clipboard-data"></i> Consolidado Semestre
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/courses/search">
+                        <i class="bi bi-search"></i> Buscar Cursos
+                    </a></li>
+                    <li><a class="dropdown-item" href="/evaluation-plans">
+                        <i class="bi bi-list-check"></i> Planes de Evaluación
+                    </a></li>
+                    <li><a class="dropdown-item" href="/create-evaluation-plan">
+                        <i class="bi bi-plus-circle"></i> Crear Plan de Evaluación
+                    </a></li>
+                    <li><a class="dropdown-item" href="/grades">
+                        <i class="bi bi-graph-up"></i> Mis Calificaciones
+                    </a></li>
+                    <li><a class="dropdown-item" href="/reports">
+                        <i class="bi bi-file-earmark-text"></i> Reportes
+                    </a></li>
+                </ul>
+            </li>
+            <% } %>
+        </div>
+    </div>
+</nav> 

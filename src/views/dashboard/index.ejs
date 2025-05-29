@@ -1,0 +1,497 @@
+<%- include('../layouts/main', { 
+    body: `
+        <div class="container-fluid py-4">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
+                <h1 class="h2">
+                    <i class="bi bi-house-fill me-2 text-primary"></i>Dashboard
+                </h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Welcome Message -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-primary alert-dismissible fade show" role="alert">
+                        <h4 class="alert-heading">
+                            <i class="bi bi-emoji-smile me-2"></i>
+                            ¡Bienvenido${user.firstName ? ', ' + user.firstName : ''}!
+                        </h4>
+                        <p class="mb-0">
+                            ${user.role === 'student' ? 'Gestiona tus calificaciones y planes de evaluación de manera inteligente.' : ''}
+                            ${user.role === 'professor' ? 'Administra tus planes de evaluación y revisa el progreso de tus estudiantes.' : ''}
+                            ${user.role === 'coordinator' ? 'Supervisa los planes de evaluación de tu facultad y aprueba nuevas propuestas.' : ''}
+                            ${user.role === 'admin' ? 'Administra el sistema completo y supervisa todas las actividades académicas.' : ''}
+                        </p>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                </div>
+            </div>
+
+            ${user.role === 'student' ? `
+                <!-- Student Dashboard -->
+                <div class="row g-4 mb-4">
+                    <!-- Stats Cards -->
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Total Materias</h6>
+                                    <h3 class="mb-0">${stats.totalSubjects || 0}</h3>
+                                </div>
+                                <i class="bi bi-book" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card success">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Materias Completadas</h6>
+                                    <h3 class="mb-0">${stats.completedSubjects || 0}</h3>
+                                </div>
+                                <i class="bi bi-check-circle" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card ${stats.averageGrade >= 4.0 ? 'success' : stats.averageGrade >= 3.0 ? 'warning' : 'danger'}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Promedio General</h6>
+                                    <h3 class="mb-0">${stats.averageGrade ? stats.averageGrade.toFixed(2) : '0.00'}</h3>
+                                </div>
+                                <i class="bi bi-graph-up" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card warning">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">En Progreso</h6>
+                                    <h3 class="mb-0">${(stats.totalSubjects || 0) - (stats.completedSubjects || 0)}</h3>
+                                </div>
+                                <i class="bi bi-clock" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Recent Grades -->
+                    <div class="col-lg-8">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-graph-up me-2"></i>Mis Calificaciones Recientes
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                ${grades && grades.length > 0 ? `
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Materia</th>
+                                                    <th>Semestre</th>
+                                                    <th class="text-center">Progreso</th>
+                                                    <th class="text-center">Calificación</th>
+                                                    <th class="text-center">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${grades.map(grade => `
+                                                    <tr>
+                                                        <td>
+                                                            <div>
+                                                                <div class="fw-semibold">${grade.subjectCode}</div>
+                                                                <small class="text-muted">${grade.evaluationPlanId?.subjectCode || 'Sin plan'}</small>
+                                                            </div>
+                                                        </td>
+                                                        <td>${grade.semester}</td>
+                                                        <td class="text-center">
+                                                            <div class="progress" style="height: 6px;">
+                                                                <div class="progress-bar" style="width: ${grade.completedPercentage || 0}%"></div>
+                                                            </div>
+                                                            <small class="text-muted">${Math.round(grade.completedPercentage || 0)}%</small>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span class="fw-bold ${
+                                                                grade.finalGrade ? 
+                                                                    grade.finalGrade >= 4.0 ? 'text-success' : 
+                                                                    grade.finalGrade >= 3.0 ? 'text-warning' : 'text-danger'
+                                                                : 'text-muted'
+                                                            }">
+                                                                ${grade.finalGrade ? grade.finalGrade.toFixed(2) : (grade.currentWeightedGrade ? grade.currentWeightedGrade.toFixed(2) : '--')}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span class="badge ${grade.isComplete ? 'bg-success' : 'bg-warning'}">
+                                                                ${grade.isComplete ? 'Completado' : 'En progreso'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <a href="/grades" class="btn btn-primary">
+                                            <i class="bi bi-eye me-2"></i>Ver Todas las Calificaciones
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-graph-up text-muted" style="font-size: 4rem;"></i>
+                                        <h5 class="mt-3 text-muted">No hay calificaciones aún</h5>
+                                        <p class="text-muted">Comienza agregando tus planes de evaluación</p>
+                                        <a href="/evaluation-plans" class="btn btn-primary">
+                                            <i class="bi bi-plus-circle me-2"></i>Ver Planes Disponibles
+                                        </a>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-lightning me-2"></i>Acciones Rápidas
+                                </h5>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-grid gap-2 flex-grow-1">
+                                    <a href="/evaluation-plans" class="btn btn-outline-primary">
+                                        <i class="bi bi-clipboard-check me-2"></i>Ver Planes de Evaluación
+                                    </a>
+                                    <a href="/grades" class="btn btn-outline-success">
+                                        <i class="bi bi-graph-up me-2"></i>Mis Calificaciones
+                                    </a>
+                                    <a href="/reports" class="btn btn-outline-info">
+                                        <i class="bi bi-file-earmark-bar-graph me-2"></i>Generar Informe
+                                    </a>
+                                </div>
+                                
+                                <div class="mt-4 p-3 bg-light rounded">
+                                    <h6 class="text-primary">
+                                        <i class="bi bi-lightbulb me-2"></i>Consejo del día
+                                    </h6>
+                                    <small class="text-muted">
+                                        Revisa regularmente tus proyecciones de calificaciones para mantenerte en el camino hacia tus objetivos académicos.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${user.role === 'professor' ? `
+                <!-- Professor Dashboard -->
+                <div class="row g-4 mb-4">
+                    <!-- Stats Cards -->
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Total Planes</h6>
+                                    <h3 class="mb-0">${stats.totalPlans || 0}</h3>
+                                </div>
+                                <i class="bi bi-clipboard-check" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card success">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Planes Aprobados</h6>
+                                    <h3 class="mb-0">${stats.approvedPlans || 0}</h3>
+                                </div>
+                                <i class="bi bi-check-circle" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card warning">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Pendientes</h6>
+                                    <h3 class="mb-0">${stats.pendingPlans || 0}</h3>
+                                </div>
+                                <i class="bi bi-clock" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Tasa Aprobación</h6>
+                                    <h3 class="mb-0">${stats.totalPlans > 0 ? Math.round((stats.approvedPlans / stats.totalPlans) * 100) : 0}%</h3>
+                                </div>
+                                <i class="bi bi-graph-up" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Recent Plans -->
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-clipboard-check me-2"></i>Mis Planes de Evaluación Recientes
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                ${plans && plans.length > 0 ? `
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Materia</th>
+                                                    <th>Grupo</th>
+                                                    <th>Semestre</th>
+                                                    <th class="text-center">Actividades</th>
+                                                    <th class="text-center">Estado</th>
+                                                    <th class="text-center">Fecha</th>
+                                                    <th class="text-center">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${plans.map(plan => `
+                                                    <tr>
+                                                        <td>
+                                                            <div class="fw-semibold">${plan.subjectCode}</div>
+                                                        </td>
+                                                        <td>Grupo ${plan.groupNumber}</td>
+                                                        <td>${plan.semester}</td>
+                                                        <td class="text-center">
+                                                            <span class="badge bg-info">${plan.activities.length}</span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span class="badge ${plan.isApproved ? 'bg-success' : 'bg-warning'}">
+                                                                ${plan.isApproved ? 'Aprobado' : 'Pendiente'}
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <small class="text-muted">
+                                                                ${new Date(plan.createdAt).toLocaleDateString()}
+                                                            </small>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <a href="/evaluation-plans/${plan._id}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="bi bi-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <a href="/evaluation-plans" class="btn btn-primary">
+                                            <i class="bi bi-eye me-2"></i>Ver Todos los Planes
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-clipboard text-muted" style="font-size: 4rem;"></i>
+                                        <h5 class="mt-3 text-muted">No hay planes de evaluación</h5>
+                                        <p class="text-muted">Comienza creando tu primer plan de evaluación</p>
+                                        <button class="btn btn-primary" onclick="alert('Funcionalidad de creación pendiente')">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear Plan
+                                        </button>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${user.role === 'coordinator' || user.role === 'admin' ? `
+                <!-- Coordinator/Admin Dashboard -->
+                <div class="row g-4 mb-4">
+                    <!-- Stats Cards -->
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card info">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Total Planes</h6>
+                                    <h3 class="mb-0">${stats.totalPlans || 0}</h3>
+                                </div>
+                                <i class="bi bi-clipboard-check" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card success">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Aprobados</h6>
+                                    <h3 class="mb-0">${stats.approvedPlans || 0}</h3>
+                                </div>
+                                <i class="bi bi-check-circle" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card warning">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Pendientes Aprobación</h6>
+                                    <h3 class="mb-0">${stats.pendingApproval || 0}</h3>
+                                </div>
+                                <i class="bi bi-clock" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6">
+                        <div class="stats-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Eficiencia</h6>
+                                    <h3 class="mb-0">${stats.totalPlans > 0 ? Math.round((stats.approvedPlans / stats.totalPlans) * 100) : 0}%</h3>
+                                </div>
+                                <i class="bi bi-graph-up" style="font-size: 2rem; opacity: 0.8;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Pending Approvals -->
+                    <div class="col-lg-8">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-clock me-2"></i>Planes Pendientes de Aprobación
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                ${plans && plans.filter(p => !p.isApproved).length > 0 ? `
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Materia</th>
+                                                    <th>Professor</th>
+                                                    <th>Grupo</th>
+                                                    <th class="text-center">Actividades</th>
+                                                    <th class="text-center">Fecha</th>
+                                                    <th class="text-center">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${plans.filter(p => !p.isApproved).slice(0, 5).map(plan => `
+                                                    <tr>
+                                                        <td>
+                                                            <div class="fw-semibold">${plan.subjectCode}</div>
+                                                        </td>
+                                                        <td>
+                                                            <small class="text-muted">${plan.professorId}</small>
+                                                        </td>
+                                                        <td>Grupo ${plan.groupNumber}</td>
+                                                        <td class="text-center">
+                                                            <span class="badge bg-info">${plan.activities.length}</span>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <small class="text-muted">
+                                                                ${new Date(plan.createdAt).toLocaleDateString()}
+                                                            </small>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <div class="btn-group btn-group-sm">
+                                                                <a href="/evaluation-plans/${plan._id}" class="btn btn-outline-primary">
+                                                                    <i class="bi bi-eye"></i>
+                                                                </a>
+                                                                <button class="btn btn-outline-success" onclick="alert('Aprobar plan')">
+                                                                    <i class="bi bi-check"></i>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="text-center mt-3">
+                                        <a href="/evaluation-plans?approved=false" class="btn btn-warning">
+                                            <i class="bi bi-clock me-2"></i>Ver Todos los Pendientes
+                                        </a>
+                                    </div>
+                                ` : `
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+                                        <h5 class="mt-3 text-success">¡Todo al día!</h5>
+                                        <p class="text-muted">No hay planes pendientes de aprobación</p>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Management -->
+                    <div class="col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-tools me-2"></i>Gestión Rápida
+                                </h5>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-grid gap-2 flex-grow-1">
+                                    <a href="/evaluation-plans" class="btn btn-outline-primary">
+                                        <i class="bi bi-clipboard-check me-2"></i>Todos los Planes
+                                    </a>
+                                    <a href="/evaluation-plans?approved=false" class="btn btn-outline-warning">
+                                        <i class="bi bi-clock me-2"></i>Pendientes (${stats.pendingApproval || 0})
+                                    </a>
+                                    <a href="/admin" class="btn btn-outline-info">
+                                        <i class="bi bi-gear me-2"></i>Panel de Control
+                                    </a>
+                                    ${user.role === 'admin' ? `
+                                        <button class="btn btn-outline-success" onclick="alert('Funcionalidad de reportes pendiente')">
+                                            <i class="bi bi-file-earmark-bar-graph me-2"></i>Reportes Globales
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                
+                                <div class="mt-4 p-3 bg-light rounded">
+                                    <h6 class="text-primary">
+                                        <i class="bi bi-info-circle me-2"></i>Recordatorio
+                                    </h6>
+                                    <small class="text-muted">
+                                        ${user.role === 'coordinator' ? 'Revisa y aprueba los planes de evaluación para mantener el flujo académico.' : 'Supervisa las actividades del sistema y gestiona usuarios según sea necesario.'}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `
+}) %> 

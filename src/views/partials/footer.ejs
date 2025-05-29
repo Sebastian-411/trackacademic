@@ -1,0 +1,49 @@
+<footer class="bg-light border-top mt-5 py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-mortarboard-fill me-2 text-primary"></i>Trackademic
+                </h6>
+                <p class="text-muted small mb-0">
+                    Sistema de gestión de notas y planes de evaluación académicos.
+                    Ayudando a estudiantes a alcanzar sus objetivos académicos.
+                </p>
+            </div>
+            <div class="col-md-3">
+                <h6 class="fw-bold mb-3">Enlaces Útiles</h6>
+                <ul class="list-unstyled">
+                    <li><a href="/dashboard" class="text-decoration-none text-muted">Dashboard</a></li>
+                    <li><a href="/evaluation-plans" class="text-decoration-none text-muted">Planes de Evaluación</a></li>
+                    <% if (user.role === 'student') { %>
+                        <li><a href="/grades" class="text-decoration-none text-muted">Mis Calificaciones</a></li>
+                        <li><a href="/reports" class="text-decoration-none text-muted">Informes</a></li>
+                    <% } %>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h6 class="fw-bold mb-3">Soporte</h6>
+                <ul class="list-unstyled">
+                    <li><a href="/api-docs" class="text-decoration-none text-muted" target="_blank">Documentación API</a></li>
+                    <li><small class="text-muted">support@trackademic.com</small></li>
+                    <li><small class="text-muted">Versión 1.0.0</small></li>
+                </ul>
+            </div>
+        </div>
+        <hr class="my-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <p class="text-muted small mb-0">
+                    © <%= new Date().getFullYear() %> Trackademic. Todos los derechos reservados.
+                </p>
+            </div>
+            <div class="col-md-6 text-end">
+                <small class="text-muted">
+                    <i class="bi bi-person-badge me-1"></i>
+                    Conectado como: <strong><%= user.firstName ? `${user.firstName} ${user.lastName}` : user.email %></strong>
+                    (<%= user.role %>)
+                </small>
+            </div>
+        </div>
+    </div>
+</footer> 

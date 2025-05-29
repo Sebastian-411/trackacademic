@@ -1,0 +1,386 @@
+<%- include('../layouts/main', { 
+    body: `
+        <div class="container-fluid py-4">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="bi bi-file-earmark-text me-2"></i>Mis Reportes
+                            </h2>
+                            <p class="text-muted mb-0">Genera y consulta reportes de tu progreso académico</p>
+                        </div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Reportes</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tipos de Reportes Disponibles -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-plus-circle me-2"></i>Generar Nuevo Reporte
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card border-primary h-100">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-graph-up text-primary mb-3" style="font-size: 3rem;"></i>
+                                            <h6 class="card-title">Reporte de Rendimiento</h6>
+                                            <p class="card-text text-muted small">
+                                                Análisis completo de tu rendimiento académico por semestre y materia.
+                                            </p>
+                                            <button onclick="generateReport('performance')" class="btn btn-primary">
+                                                <i class="bi bi-play-circle me-2"></i>Generar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card border-success h-100">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-clipboard-data text-success mb-3" style="font-size: 3rem;"></i>
+                                            <h6 class="card-title">Reporte de Calificaciones</h6>
+                                            <p class="card-text text-muted small">
+                                                Detalle de todas tus calificaciones organizadas por materia y tipo de evaluación.
+                                            </p>
+                                            <button onclick="generateReport('grades')" class="btn btn-success">
+                                                <i class="bi bi-play-circle me-2"></i>Generar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="card border-info h-100">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-calendar-check text-info mb-3" style="font-size: 3rem;"></i>
+                                            <h6 class="card-title">Reporte de Proyecciones</h6>
+                                            <p class="card-text text-muted small">
+                                                Proyecciones de notas finales y recomendaciones para alcanzar objetivos.
+                                            </p>
+                                            <button onclick="generateReport('projections')" class="btn btn-info">
+                                                <i class="bi bi-play-circle me-2"></i>Generar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reportes Generados -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-folder2-open me-2"></i>Mis Reportes Generados
+                            </h5>
+                            <button onclick="loadReports()" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="reportsContainer">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="text-muted mt-2">Cargando reportes...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para mostrar reporte -->
+        <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reportModalLabel">
+                            <i class="bi bi-file-earmark-text me-2"></i>Detalle del Reporte
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="reportContent">
+                            <!-- El contenido del reporte se cargará aquí -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" onclick="downloadReport()" class="btn btn-primary">
+                            <i class="bi bi-download me-2"></i>Descargar PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let currentReportId = null;
+
+            document.addEventListener('DOMContentLoaded', function() {
+                loadReports();
+            });
+
+            async function generateReport(type) {
+                try {
+                    showToast('Generando reporte...', 'info');
+                    
+                    const response = await fetch(\`/api/reports/generate\`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            type: type,
+                            studentId: '${user.id}',
+                            parameters: getReportParameters(type)
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showToast('Reporte generado exitosamente', 'success');
+                        loadReports(); // Recargar la lista de reportes
+                    } else {
+                        showToast(result.message || 'Error al generar el reporte', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error al generar el reporte', 'error');
+                }
+            }
+
+            function getReportParameters(type) {
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear();
+                const currentSemester = currentDate.getMonth() < 6 ? 1 : 2;
+                
+                switch (type) {
+                    case 'performance':
+                        return {
+                            semester: \`\${currentYear}-\${currentSemester}\`,
+                            includeComparisons: true,
+                            includeGraphs: true
+                        };
+                    case 'grades':
+                        return {
+                            semester: \`\${currentYear}-\${currentSemester}\`,
+                            includeDetails: true,
+                            groupBySubject: true
+                        };
+                    case 'projections':
+                        return {
+                            targetGrade: 3.0,
+                            includeRecommendations: true,
+                            projectionMonths: 6
+                        };
+                    default:
+                        return {};
+                }
+            }
+
+            async function loadReports() {
+                try {
+                    const response = await fetch(\`/api/reports/student/${user.id}\`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        displayReports(result.reports);
+                    } else {
+                        document.getElementById('reportsContainer').innerHTML = \`
+                            <div class="text-center py-4">
+                                <i class="bi bi-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
+                                <h6 class="text-muted">Error al cargar reportes</h6>
+                                <p class="text-muted">No se pudieron cargar los reportes generados.</p>
+                            </div>
+                        \`;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('reportsContainer').innerHTML = \`
+                        <div class="text-center py-4">
+                            <i class="bi bi-wifi-off text-muted mb-3" style="font-size: 3rem;"></i>
+                            <h6 class="text-muted">Sin conexión</h6>
+                            <p class="text-muted">No se pudo conectar con el servidor.</p>
+                        </div>
+                    \`;
+                }
+            }
+
+            function displayReports(reports) {
+                const container = document.getElementById('reportsContainer');
+                
+                if (reports.length === 0) {
+                    container.innerHTML = \`
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark text-muted mb-3" style="font-size: 4rem;"></i>
+                            <h4 class="text-muted mb-3">No hay reportes generados</h4>
+                            <p class="text-muted mb-4">
+                                Aún no has generado ningún reporte. Utiliza las opciones de arriba para crear tu primer reporte.
+                            </p>
+                        </div>
+                    \`;
+                    return;
+                }
+                
+                const reportsHTML = reports.map(report => {
+                    const typeInfo = getReportTypeInfo(report.type);
+                    const statusColor = report.status === 'completed' ? 'success' : 
+                                      report.status === 'failed' ? 'danger' : 'warning';
+                    
+                    return \`
+                        <div class="col-lg-6 col-xl-4">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <i class="\${typeInfo.icon} text-\${typeInfo.color} me-2" style="font-size: 1.5rem;"></i>
+                                            <div>
+                                                <h6 class="card-title mb-1">\${typeInfo.title}</h6>
+                                                <small class="text-muted">\${report.type}</small>
+                                            </div>
+                                        </div>
+                                        <span class="badge bg-\${statusColor}">\${getStatusText(report.status)}</span>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="row g-2 text-center">
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">Generado</small>
+                                                <span class="fw-medium small">
+                                                    \${new Date(report.createdAt).toLocaleDateString('es-ES')}
+                                                </span>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted d-block">Tipo</small>
+                                                <span class="fw-medium small">\${typeInfo.title}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    \${report.summary ? \`
+                                        <p class="card-text text-muted small mb-3">
+                                            \${report.summary.substring(0, 100)}\${report.summary.length > 100 ? '...' : ''}
+                                        </p>
+                                    \` : ''}
+                                </div>
+                                
+                                <div class="card-footer bg-transparent border-0 pt-0">
+                                    <div class="d-grid gap-2">
+                                        \${report.status === 'completed' ? \`
+                                            <button onclick="viewReport('\${report._id}')" class="btn btn-primary">
+                                                <i class="bi bi-eye me-2"></i>Ver Reporte
+                                            </button>
+                                            <button onclick="downloadReportDirect('\${report._id}')" class="btn btn-outline-secondary btn-sm">
+                                                <i class="bi bi-download me-2"></i>Descargar
+                                            </button>
+                                        \` : \`
+                                            <button class="btn btn-secondary" disabled>
+                                                <i class="bi bi-clock me-2"></i>Procesando...
+                                            </button>
+                                        \`}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    \`;
+                }).join('');
+                
+                container.innerHTML = \`<div class="row g-4">\${reportsHTML}</div>\`;
+            }
+
+            function getReportTypeInfo(type) {
+                switch (type) {
+                    case 'performance':
+                        return { title: 'Rendimiento', icon: 'bi bi-graph-up', color: 'primary' };
+                    case 'grades':
+                        return { title: 'Calificaciones', icon: 'bi bi-clipboard-data', color: 'success' };
+                    case 'projections':
+                        return { title: 'Proyecciones', icon: 'bi bi-calendar-check', color: 'info' };
+                    default:
+                        return { title: 'Reporte', icon: 'bi bi-file-earmark-text', color: 'secondary' };
+                }
+            }
+
+            function getStatusText(status) {
+                switch (status) {
+                    case 'completed': return 'Completado';
+                    case 'failed': return 'Error';
+                    case 'processing': return 'Procesando';
+                    default: return 'Pendiente';
+                }
+            }
+
+            async function viewReport(reportId) {
+                try {
+                    currentReportId = reportId;
+                    
+                    const response = await fetch(\`/api/reports/\${reportId}/content\`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        document.getElementById('reportContent').innerHTML = result.content;
+                        new bootstrap.Modal(document.getElementById('reportModal')).show();
+                    } else {
+                        showToast('Error al cargar el reporte', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error al cargar el reporte', 'error');
+                }
+            }
+
+            async function downloadReport() {
+                if (!currentReportId) return;
+                await downloadReportDirect(currentReportId);
+            }
+
+            async function downloadReportDirect(reportId) {
+                try {
+                    const response = await fetch(\`/api/reports/\${reportId}/download\`);
+                    
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = \`reporte_\${reportId}.pdf\`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        showToast('Reporte descargado exitosamente', 'success');
+                    } else {
+                        showToast('Error al descargar el reporte', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast('Error al descargar el reporte', 'error');
+                }
+            }
+        </script>
+    `
+}) %> 

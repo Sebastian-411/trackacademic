@@ -1,0 +1,555 @@
+<%- contentFor('body') %>
+<div class="container-fluid px-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/my-courses">Mis Materias</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <%= studentGrade.subjectCode %> - Notas
+                    </li>
+                </ol>
+            </nav>
+
+            <!-- Header con información del curso -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <%= studentGrade.subjectCode %> - <%= subjectName %>
+                    </h1>
+                    <p class="text-muted">
+                        Semestre <%= studentGrade.semester %> | Grupo <%= studentGrade.groupNumber %>
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/my-courses" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                    <a href="/evaluation-plans/<%= studentGrade.evaluationPlanId %>" class="btn btn-outline-primary">
+                        <i class="bi bi-eye"></i> Ver Plan
+                    </a>
+                </div>
+            </div>
+
+            <!-- Tarjetas de resumen -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Nota Actual</div>
+                                    <div class="h5 mb-0 font-weight-bold" id="current-grade-display">
+                                        <%= (studentGrade.currentGrade || 0).toFixed(2) %>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-star fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Progreso</div>
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col-auto">
+                                            <div class="h5 mb-0 mr-3 font-weight-bold" id="progress-display">
+                                                <%= studentGrade.progress || 0 %>%
+                                            </div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="progress progress-sm mr-2">
+                                                <div class="progress-bar bg-success" role="progressbar" 
+                                                     style="width: <%= studentGrade.progress || 0 %>%" 
+                                                     aria-valuenow="<%= studentGrade.progress || 0 %>" 
+                                                     aria-valuemin="0" aria-valuemax="100">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-graph-up fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Actividades</div>
+                                    <div class="h5 mb-0 font-weight-bold" id="activities-display">
+                                        <%= studentGrade.metadata?.completedActivities || 0 %>/<%= studentGrade.activities.length %>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-list-check fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-3">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Estado</div>
+                                    <div class="h5 mb-0 font-weight-bold" id="status-display">
+                                        <% if (studentGrade.isComplete) { %>
+                                            <% if (studentGrade.finalGrade >= 3.0) { %>
+                                                <span class="text-success">Aprobada</span>
+                                            <% } else { %>
+                                                <span class="text-danger">Reprobada</span>
+                                            <% } %>
+                                        <% } else { %>
+                                            <span class="text-secondary">En Progreso</span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="bi bi-flag fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de actividades -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        Actividades y Notas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Actividad</th>
+                                    <th width="100">Porcentaje</th>
+                                    <th width="120">Nota (0-5)</th>
+                                    <th width="100">Contribución</th>
+                                    <th width="150">Fecha Ingreso</th>
+                                    <th width="120">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% studentGrade.activities.forEach((activity, index) => { %>
+                                <tr id="activity-row-<%= index %>">
+                                    <td>
+                                        <div class="fw-bold"><%= activity.name %></div>
+                                        <% if (activity.notes) { %>
+                                        <small class="text-muted">
+                                            <i class="bi bi-sticky"></i> <%= activity.notes %>
+                                        </small>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary"><%= activity.percentage %>%</span>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" 
+                                                   class="form-control grade-input" 
+                                                   id="grade-<%= index %>"
+                                                   data-activity="<%= activity.name %>"
+                                                   data-percentage="<%= activity.percentage %>"
+                                                   min="0" max="5" step="0.1"
+                                                   value="<%= activity.score !== null ? activity.score : '' %>"
+                                                   placeholder="0.0">
+                                            <span class="input-group-text">/5.0</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="contribution-display" id="contribution-<%= index %>">
+                                            <% if (activity.score !== null) { %>
+                                                <%= ((activity.score / 5) * activity.percentage / 100 * 5).toFixed(2) %>
+                                            <% } else { %>
+                                                0.00
+                                            <% } %>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <% if (activity.submittedAt) { %>
+                                            <small class="text-muted">
+                                                <%= new Date(activity.submittedAt).toLocaleDateString('es-ES') %>
+                                            </small>
+                                        <% } else { %>
+                                            <small class="text-muted">-</small>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <button type="button" 
+                                                    class="btn btn-success save-grade" 
+                                                    data-activity="<%= activity.name %>"
+                                                    data-index="<%= index %>"
+                                                    title="Guardar">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            <button type="button" 
+                                                    class="btn btn-danger delete-grade" 
+                                                    data-activity="<%= activity.name %>"
+                                                    data-index="<%= index %>"
+                                                    title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-active">
+                                    <td class="fw-bold">TOTAL</td>
+                                    <td class="text-center fw-bold">100%</td>
+                                    <td class="text-center fw-bold" id="total-grade">
+                                        <%= (studentGrade.currentGrade || 0).toFixed(2) %>
+                                    </td>
+                                    <td class="text-center fw-bold" id="total-contribution">
+                                        <%= (studentGrade.currentGrade || 0).toFixed(2) %>
+                                    </td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Calculadora de notas mínimas -->
+                    <div class="mt-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="m-0 font-weight-bold text-success">
+                                    <i class="bi bi-calculator"></i> Calculadora de Notas Mínimas
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="target-grade" class="form-label">Nota objetivo:</label>
+                                        <div class="input-group">
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="target-grade" 
+                                                   min="0" max="5" step="0.1" 
+                                                   value="3.0">
+                                            <span class="input-group-text">/5.0</span>
+                                            <button class="btn btn-primary" type="button" id="calculate-btn">
+                                                Calcular
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div id="calculation-result" class="mt-2">
+                                            <small class="text-muted">
+                                                Ingresa una nota objetivo y haz clic en "Calcular"
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para notas adicionales -->
+<div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="notesModalLabel">Notas Adicionales</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="activity-notes" class="form-label">Notas para la actividad:</label>
+                    <textarea class="form-control" id="activity-notes" rows="3" 
+                              placeholder="Agrega notas o comentarios sobre esta actividad..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="save-with-notes">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const gradeId = '<%= studentGrade._id %>';
+    let currentActivity = null;
+    let currentIndex = null;
+
+    // Actualizar contribución en tiempo real
+    document.querySelectorAll('.grade-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const percentage = parseFloat(this.dataset.percentage);
+            const score = parseFloat(this.value) || 0;
+            const index = this.id.split('-')[1];
+            
+            const contribution = (score / 5) * percentage / 100 * 5;
+            document.getElementById(`contribution-${index}`).textContent = contribution.toFixed(2);
+            
+            updateTotals();
+        });
+    });
+
+    // Guardar nota
+    document.querySelectorAll('.save-grade').forEach(button => {
+        button.addEventListener('click', function() {
+            const activityName = this.dataset.activity;
+            const index = this.dataset.index;
+            const gradeInput = document.getElementById(`grade-${index}`);
+            const score = parseFloat(gradeInput.value);
+            
+            if (isNaN(score) || score < 0 || score > 5) {
+                showAlert('error', 'La nota debe estar entre 0 y 5');
+                return;
+            }
+
+            currentActivity = activityName;
+            currentIndex = index;
+            
+            // Mostrar modal para notas adicionales
+            const notesModal = new bootstrap.Modal(document.getElementById('notesModal'));
+            document.getElementById('activity-notes').value = '';
+            notesModal.show();
+        });
+    });
+
+    // Guardar con notas
+    document.getElementById('save-with-notes').addEventListener('click', function() {
+        const gradeInput = document.getElementById(`grade-${currentIndex}`);
+        const score = parseFloat(gradeInput.value);
+        const notes = document.getElementById('activity-notes').value;
+        
+        saveGrade(currentActivity, score, notes);
+        bootstrap.Modal.getInstance(document.getElementById('notesModal')).hide();
+    });
+
+    // Eliminar nota
+    document.querySelectorAll('.delete-grade').forEach(button => {
+        button.addEventListener('click', function() {
+            const activityName = this.dataset.activity;
+            const index = this.dataset.index;
+            
+            if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
+                deleteGrade(activityName, index);
+            }
+        });
+    });
+
+    // Calculadora de notas mínimas
+    document.getElementById('calculate-btn').addEventListener('click', function() {
+        const targetGrade = parseFloat(document.getElementById('target-grade').value);
+        calculateMinimumGrades(targetGrade);
+    });
+
+    function saveGrade(activityName, score, notes) {
+        fetch(`/api/my-grades/${gradeId}/activity/${encodeURIComponent(activityName)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ score, notes })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                updateDisplays(data);
+                // Actualizar la fecha de envío
+                const row = document.getElementById(`activity-row-${currentIndex}`);
+                const dateCell = row.querySelector('td:nth-child(5)');
+                dateCell.innerHTML = `<small class="text-muted">${new Date().toLocaleDateString('es-ES')}</small>`;
+            } else {
+                showAlert('error', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error al guardar la nota');
+        });
+    }
+
+    function deleteGrade(activityName, index) {
+        fetch(`/api/my-grades/${gradeId}/activity/${encodeURIComponent(activityName)}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                updateDisplays(data);
+                
+                // Limpiar el input y la contribución
+                document.getElementById(`grade-${index}`).value = '';
+                document.getElementById(`contribution-${index}`).textContent = '0.00';
+                
+                // Limpiar fecha
+                const row = document.getElementById(`activity-row-${index}`);
+                const dateCell = row.querySelector('td:nth-child(5)');
+                dateCell.innerHTML = `<small class="text-muted">-</small>`;
+                
+                updateTotals();
+            } else {
+                showAlert('error', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error al eliminar la nota');
+        });
+    }
+
+    function updateDisplays(data) {
+        document.getElementById('current-grade-display').textContent = data.currentGrade.toFixed(2);
+        document.getElementById('progress-display').textContent = data.progress + '%';
+        
+        const progressBar = document.querySelector('.progress-bar');
+        progressBar.style.width = data.progress + '%';
+        progressBar.setAttribute('aria-valuenow', data.progress);
+        
+        // Actualizar estado
+        const statusDisplay = document.getElementById('status-display');
+        if (data.isComplete) {
+            if (data.currentGrade >= 3.0) {
+                statusDisplay.innerHTML = '<span class="text-success">Aprobada</span>';
+            } else {
+                statusDisplay.innerHTML = '<span class="text-danger">Reprobada</span>';
+            }
+        } else {
+            statusDisplay.innerHTML = '<span class="text-secondary">En Progreso</span>';
+        }
+        
+        updateTotals();
+    }
+
+    function updateTotals() {
+        let totalContribution = 0;
+        document.querySelectorAll('.contribution-display').forEach(span => {
+            totalContribution += parseFloat(span.textContent) || 0;
+        });
+        
+        document.getElementById('total-grade').textContent = totalContribution.toFixed(2);
+        document.getElementById('total-contribution').textContent = totalContribution.toFixed(2);
+    }
+
+    function calculateMinimumGrades(targetGrade) {
+        const activities = <%= JSON.stringify(studentGrade.activities) %>;
+        let currentContribution = 0;
+        let remainingPercentage = 0;
+        
+        activities.forEach(activity => {
+            if (activity.score !== null) {
+                currentContribution += (activity.score / 5) * activity.percentage / 100 * 5;
+            } else {
+                remainingPercentage += activity.percentage;
+            }
+        });
+        
+        const neededContribution = targetGrade - currentContribution;
+        const requiredAverage = remainingPercentage > 0 ? (neededContribution * 100) / remainingPercentage : 0;
+        
+        const resultDiv = document.getElementById('calculation-result');
+        
+        if (remainingPercentage === 0) {
+            resultDiv.innerHTML = '<div class="alert alert-info">Ya tienes todas las actividades completadas.</div>';
+        } else if (requiredAverage <= 0) {
+            resultDiv.innerHTML = '<div class="alert alert-success">¡Ya has alcanzado la nota objetivo!</div>';
+        } else if (requiredAverage <= 5.0) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-primary">
+                    <strong>Nota mínima requerida:</strong> ${requiredAverage.toFixed(2)}/5.0<br>
+                    <small>En las actividades restantes (${remainingPercentage}% del total)</small>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <strong>No es posible alcanzar la nota objetivo.</strong><br>
+                    <small>Se requeriría ${requiredAverage.toFixed(2)}/5.0 en las actividades restantes</small>
+                </div>
+            `;
+        }
+    }
+
+    function showAlert(type, message) {
+        const alertHtml = `
+            <div class="alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Insertar al inicio del contenido
+        const container = document.querySelector('.container-fluid');
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Auto-eliminar después de 5 segundos
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.progress-sm {
+    height: 0.5rem;
+}
+
+.grade-input:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+.table th {
+    background-color: #f8f9fc;
+    border-color: #e3e6f0;
+}
+
+.contribution-display {
+    font-weight: 600;
+    color: #5a5c69;
+}
+</style> 

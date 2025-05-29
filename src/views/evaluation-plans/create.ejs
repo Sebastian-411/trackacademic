@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    
+    <div class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <!-- Page Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h2 mb-1">
+                            <i class="bi bi-plus-circle me-2 text-primary"></i>Crear Plan de Evaluación
+                        </h1>
+                        <p class="text-muted mb-0">Define las actividades y porcentajes para una materia</p>
+                    </div>
+                    <a href="/evaluation-plans" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+
+                <!-- Información importante -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <div class="d-flex">
+                                <i class="bi bi-info-circle flex-shrink-0 me-3" style="font-size: 1.5rem;"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-2">Información Importante</h6>
+                                    <ul class="mb-0">
+                                        <li>Los porcentajes de todas las actividades deben sumar exactamente <strong>100%</strong></li>
+                                        <li>Los planes creados por estudiantes requieren aprobación antes de ser visibles para otros</li>
+                                        <li>Puedes editar el plan hasta que sea aprobado</li>
+                                        <li>Una vez aprobado, podrás usarlo para calcular tus calificaciones</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario Principal -->
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clipboard-data me-2"></i>Información del Plan
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="createPlanForm">
+                            <!-- Información básica -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label for="subjectCode" class="form-label">
+                                        <i class="bi bi-book me-1"></i>Materia *
+                                    </label>
+                                    <select class="form-select" id="subjectCode" name="subjectCode" required>
+                                        <option value="">Seleccionar materia...</option>
+                                        <% subjects.forEach(subject => { %>
+                                            <option value="<%= subject.code %>">
+                                                <%= subject.code %> - <%= subject.name %>
+                                            </option>
+                                        <% }); %>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="semester" class="form-label">
+                                        <i class="bi bi-calendar me-1"></i>Semestre *
+                                    </label>
+                                    <select class="form-select" id="semester" name="semester" required>
+                                        <option value="">Seleccionar semestre...</option>
+                                        <option value="2024-1">2024-1</option>
+                                        <option value="2024-2">2024-2</option>
+                                        <option value="2025-1">2025-1</option>
+                                        <option value="2025-2">2025-2</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="groupNumber" class="form-label">
+                                        <i class="bi bi-people me-1"></i>Número de Grupo *
+                                    </label>
+                                    <input type="number" class="form-control" id="groupNumber" name="groupNumber" 
+                                           min="1" max="10" placeholder="Ej: 1" required>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <!-- Sección de Actividades -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-list-task me-2"></i>Actividades de Evaluación
+                                </h6>
+                                <button type="button" id="addActivity" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-plus me-1"></i>Agregar Actividad
+                                </button>
+                            </div>
+
+                            <div id="activitiesContainer">
+                                <!-- Primera actividad por defecto -->
+                                <div class="activity-item border rounded p-3 mb-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="mb-0 text-primary">Actividad 1</h6>
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-activity" style="display: none;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nombre de la Actividad *</label>
+                                            <input type="text" class="form-control activity-name" 
+                                                   placeholder="Ej: Parcial 1, Taller, Proyecto..." required>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Porcentaje *</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control activity-percentage" 
+                                                       min="0" max="100" step="0.1" placeholder="30" required>
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Fecha de Entrega</label>
+                                            <input type="date" class="form-control activity-date">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Descripción</label>
+                                            <input type="text" class="form-control activity-description" 
+                                                   placeholder="Descripción opcional">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Resumen de Porcentajes -->
+                            <div class="alert alert-light border">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-calculator me-2"></i>
+                                        <strong>Total de Porcentajes:</strong>
+                                    </div>
+                                    <div>
+                                        <span id="totalPercentage" class="fs-5 fw-bold text-primary">0%</span>
+                                    </div>
+                                </div>
+                                <div id="percentageAlert" class="mt-2 small text-danger" style="display: none;">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    El total debe ser exactamente 100% para poder crear el plan.
+                                </div>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="d-flex justify-content-end gap-3 pt-3">
+                                <a href="/evaluation-plans" class="btn btn-secondary">
+                                    <i class="bi bi-x-circle me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" id="createPlanBtn" class="btn btn-primary" disabled>
+                                    <i class="bi bi-save me-2"></i>Crear Plan de Evaluación
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/alerts') %>
+    <%- include('../partials/footer') %>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/js/app.js"></script>
+
+    <script>
+        let activityCount = 1;
+
+        // Agregar nueva actividad
+        document.getElementById('addActivity').addEventListener('click', function() {
+            activityCount++;
+            const container = document.getElementById('activitiesContainer');
+            
+            const activityHtml = `
+                <div class="activity-item border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0 text-primary">Actividad ${activityCount}</h6>
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-activity">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nombre de la Actividad *</label>
+                            <input type="text" class="form-control activity-name" 
+                                   placeholder="Ej: Parcial 1, Taller, Proyecto..." required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Porcentaje *</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control activity-percentage" 
+                                       min="0" max="100" step="0.1" placeholder="30" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha de Entrega</label>
+                            <input type="date" class="form-control activity-date">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" class="form-control activity-description" 
+                                   placeholder="Descripción opcional">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', activityHtml);
+            updateRemoveButtons();
+            updateTotalPercentage();
+        });
+
+        // Remover actividad
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-activity')) {
+                e.target.closest('.activity-item').remove();
+                updateRemoveButtons();
+                updateTotalPercentage();
+            }
+        });
+
+        // Actualizar botones de remover
+        function updateRemoveButtons() {
+            const activities = document.querySelectorAll('.activity-item');
+            activities.forEach(activity => {
+                const removeBtn = activity.querySelector('.remove-activity');
+                if (activities.length > 1) {
+                    removeBtn.style.display = 'block';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            });
+        }
+
+        // Calcular total de porcentajes
+        function updateTotalPercentage() {
+            const percentageInputs = document.querySelectorAll('.activity-percentage');
+            let total = 0;
+            
+            percentageInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+            
+            const totalElement = document.getElementById('totalPercentage');
+            const alert = document.getElementById('percentageAlert');
+            const createBtn = document.getElementById('createPlanBtn');
+            
+            totalElement.textContent = total.toFixed(1) + '%';
+            
+            if (Math.abs(total - 100) < 0.1) {
+                totalElement.className = 'fs-5 fw-bold text-success';
+                alert.style.display = 'none';
+                createBtn.disabled = false;
+            } else {
+                totalElement.className = 'fs-5 fw-bold text-danger';
+                alert.style.display = 'block';
+                createBtn.disabled = true;
+            }
+        }
+
+        // Event listeners para porcentajes
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('activity-percentage')) {
+                updateTotalPercentage();
+            }
+        });
+
+        // Envío del formulario
+        document.getElementById('createPlanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('createPlanBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-clock me-2"></i>Creando...';
+                
+                // Recopilar datos del formulario
+                const formData = {
+                    subjectCode: document.getElementById('subjectCode').value,
+                    semester: document.getElementById('semester').value,
+                    groupNumber: parseInt(document.getElementById('groupNumber').value),
+                    professorId: '<%= user.id %>', // Usuario actual actúa como profesor
+                    activities: []
+                };
+                
+                // Recopilar actividades
+                const activityItems = document.querySelectorAll('.activity-item');
+                activityItems.forEach(item => {
+                    const name = item.querySelector('.activity-name').value;
+                    const percentage = parseFloat(item.querySelector('.activity-percentage').value);
+                    const date = item.querySelector('.activity-date').value;
+                    const description = item.querySelector('.activity-description').value;
+                    
+                    if (name && percentage) {
+                        formData.activities.push({
+                            name,
+                            percentage,
+                            dueDate: date || null,
+                            description
+                        });
+                    }
+                });
+                
+                // Validaciones
+                if (formData.activities.length === 0) {
+                    showToast('Debes agregar al menos una actividad', 'error');
+                    return;
+                }
+                
+                const totalPercentage = formData.activities.reduce((sum, act) => sum + act.percentage, 0);
+                if (Math.abs(totalPercentage - 100) > 0.1) {
+                    showToast('Los porcentajes deben sumar exactamente 100%', 'error');
+                    return;
+                }
+                
+                // Enviar al servidor
+                const response = await fetch('/api/evaluation-plans', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast('Plan de evaluación creado exitosamente. Pendiente de aprobación.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/evaluation-plans/' + result.data._id;
+                    }, 1500);
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Error al crear el plan', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error de conexión', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        // Función para mostrar toast
+        function showToast(message, type) {
+            // Usar la función de toast global si existe, sino crear una simple
+            if (window.trackademic && window.trackademic.showToast) {
+                window.trackademic.showToast(message, type);
+            } else {
+                alert(message);
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRemoveButtons();
+            updateTotalPercentage();
+        });
+    </script>
+</body>
+</html> 

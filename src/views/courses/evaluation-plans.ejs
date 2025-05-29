@@ -1,0 +1,467 @@
+<%- include('../layouts/main', { 
+    body: `
+        <div class="container-fluid py-4">
+            <!-- Header -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="bi bi-clipboard-check me-2"></i>Planes de Evaluación
+                            </h2>
+                            <p class="text-muted mb-0">${course.name} - Grupo ${course.groupNumber} (${course.semester})</p>
+                        </div>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="/courses/search">Búsqueda de Cursos</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Planes de Evaluación</li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del Curso -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-gradient-primary text-white">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h4 class="card-title mb-2">${course.code} - ${course.name}</h4>
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <small class="text-white-50 d-block">Semestre</small>
+                                            <span class="fw-medium">${course.semester}</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-white-50 d-block">Grupo</small>
+                                            <span class="fw-medium">${course.groupNumber}</span>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <small class="text-white-50 d-block">Créditos</small>
+                                            <span class="fw-medium">${course.credits}</span>
+                                        </div>
+                                        ${course.professor ? `
+                                            <div class="col-md-3">
+                                                <small class="text-white-50 d-block">Profesor</small>
+                                                <span class="fw-medium">${course.professor.first_name} ${course.professor.last_name}</span>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <i class="bi bi-book-half" style="font-size: 4rem; opacity: 0.7;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planes de Evaluación Existentes -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-ul me-2"></i>Planes de Evaluación Disponibles
+                            </h5>
+                            <div>
+                                ${['professor', 'coordinator', 'admin', 'student'].includes(user.role) ? `
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                                        <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Plan
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            ${evaluationPlans.length > 0 ? `
+                                <div class="row g-4">
+                                    ${evaluationPlans.map((plan, index) => `
+                                        <div class="col-lg-6 col-xl-4">
+                                            <div class="card h-100 border-0 shadow-sm">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="card-title mb-1">Plan ${index + 1}</h6>
+                                                            <small class="text-muted">
+                                                                ${plan.activities.length} actividades
+                                                            </small>
+                                                        </div>
+                                                        <div class="text-end">
+                                                            ${plan.isApproved ? `
+                                                                <span class="badge bg-success">
+                                                                    <i class="bi bi-check-circle me-1"></i>Aprobado
+                                                                </span>
+                                                            ` : `
+                                                                <span class="badge bg-warning">
+                                                                    <i class="bi bi-clock me-1"></i>Pendiente
+                                                                </span>
+                                                            `}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="mb-3">
+                                                        <small class="text-muted d-block mb-2">Actividades:</small>
+                                                        ${plan.activities.slice(0, 3).map(activity => `
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <span class="small">${activity.name}</span>
+                                                                <span class="badge bg-light text-dark">${activity.percentage}%</span>
+                                                            </div>
+                                                        `).join('')}
+                                                        ${plan.activities.length > 3 ? `
+                                                            <small class="text-muted">Y ${plan.activities.length - 3} más...</small>
+                                                        ` : ''}
+                                                    </div>
+                                                    
+                                                    <div class="row g-2 text-center mb-3">
+                                                        <div class="col-6">
+                                                            <small class="text-muted d-block">Creado</small>
+                                                            <span class="fw-medium small">
+                                                                ${new Date(plan.createdAt).toLocaleDateString('es-ES')}
+                                                            </span>
+                                                        </div>
+                                                        <div class="col-6">
+                                                            <small class="text-muted d-block">Actividades</small>
+                                                            <span class="fw-medium small">${plan.activities.length}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="card-footer bg-transparent border-0 pt-0">
+                                                    <div class="d-grid gap-2">
+                                                        <a href="/evaluation-plans/${plan._id}" class="btn btn-primary">
+                                                            <i class="bi bi-eye me-2"></i>Ver Detalle
+                                                        </a>
+                                                        ${plan.isApproved ? `
+                                                            <button onclick="useThisPlan('${plan._id}')" class="btn btn-outline-success">
+                                                                <i class="bi bi-calculator me-2"></i>Usar Para Cálculos
+                                                            </button>
+                                                        ` : ''}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <div class="text-center py-5">
+                                    <i class="bi bi-clipboard-x text-muted mb-3" style="font-size: 4rem;"></i>
+                                    <h4 class="text-muted mb-3">No hay planes de evaluación</h4>
+                                    <p class="text-muted mb-4">
+                                        Aún no se han creado planes de evaluación para este curso.
+                                    </p>
+                                    ${['professor', 'coordinator', 'admin', 'student'].includes(user.role) ? `
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear Primer Plan
+                                        </button>
+                                    ` : `
+                                        <p class="text-muted">Contacta al profesor para crear un plan de evaluación.</p>
+                                    `}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `
+}) %>
+
+<!-- Modal para Crear Plan de Evaluación -->
+<% if (['professor', 'coordinator', 'admin', 'student'].includes(user.role)) { %>
+<div class="modal fade" id="createPlanModal" tabindex="-1" aria-labelledby="createPlanModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createPlanModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Plan de Evaluación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createPlanForm">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Los porcentajes de todas las actividades deben sumar exactamente <strong>100%</strong>.
+                    </div>
+                    
+                    <div id="activitiesContainer">
+                        <div class="activity-item border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Actividad 1</h6>
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-activity" style="display: none;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nombre de la Actividad *</label>
+                                    <input type="text" class="form-control activity-name" placeholder="Ej: Parcial 1" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Porcentaje *</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control activity-percentage" min="0" max="100" step="0.1" required>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Fecha de Entrega</label>
+                                    <input type="date" class="form-control activity-date">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Descripción</label>
+                                    <input type="text" class="form-control activity-description" placeholder="Descripción opcional">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button type="button" id="addActivity" class="btn btn-outline-primary">
+                            <i class="bi bi-plus me-2"></i>Agregar Actividad
+                        </button>
+                        <div class="text-end">
+                            <small class="text-muted">Total: </small>
+                            <span id="totalPercentage" class="fw-bold text-primary">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div id="percentageAlert" class="alert alert-warning" style="display: none;">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        El total de porcentajes debe ser exactamente 100%.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" id="createPlanBtn" class="btn btn-primary" disabled>
+                        <i class="bi bi-save me-2"></i>Crear Plan de Evaluación
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<!-- Scripts específicos para esta página -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let activityCount = 1;
+
+    function addActivity() {
+        activityCount++;
+        const container = document.getElementById('activitiesContainer');
+        const activityHtml = `
+            <div class="activity-item border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Actividad ${activityCount}</h6>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-activity">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre de la Actividad *</label>
+                        <input type="text" class="form-control activity-name" placeholder="Ej: Parcial ${activityCount}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Porcentaje *</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control activity-percentage" min="0" max="100" step="0.1" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha de Entrega</label>
+                        <input type="date" class="form-control activity-date">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Descripción</label>
+                        <input type="text" class="form-control activity-description" placeholder="Descripción opcional">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', activityHtml);
+        updateRemoveButtons();
+        updateTotalPercentage();
+    }
+
+    function removeActivity(button) {
+        button.closest('.activity-item').remove();
+        updateRemoveButtons();
+        updateTotalPercentage();
+    }
+
+    function updateRemoveButtons() {
+        const activities = document.querySelectorAll('.activity-item');
+        const removeButtons = document.querySelectorAll('.remove-activity');
+        
+        removeButtons.forEach(btn => {
+            btn.style.display = activities.length > 1 ? 'inline-block' : 'none';
+        });
+    }
+
+    function updateTotalPercentage() {
+        const percentageInputs = document.querySelectorAll('.activity-percentage');
+        let total = 0;
+        
+        percentageInputs.forEach(input => {
+            const value = parseFloat(input.value) || 0;
+            total += value;
+        });
+        
+        const totalElement = document.getElementById('totalPercentage');
+        const alert = document.getElementById('percentageAlert');
+        const createBtn = document.getElementById('createPlanBtn');
+        
+        if (totalElement) {
+            totalElement.textContent = total.toFixed(1) + '%';
+            
+            if (Math.abs(total - 100) < 0.1) {
+                totalElement.className = 'fw-bold text-success';
+                if (alert) alert.style.display = 'none';
+                if (createBtn) createBtn.disabled = false;
+            } else {
+                totalElement.className = 'fw-bold text-danger';
+                if (alert) alert.style.display = 'block';
+                if (createBtn) createBtn.disabled = true;
+            }
+        }
+    }
+
+    function useThisPlan(planId) {
+        window.location.href = `/evaluation-plans/${planId}`;
+    }
+
+    // Función auxiliar para mostrar toasts
+    function showToast(message, type) {
+        const toastHtml = `
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11000;">
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header">
+                        <strong class="me-auto">${type === 'success' ? 'Éxito' : 'Error'}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', toastHtml);
+        
+        setTimeout(() => {
+            const toastElement = document.querySelector('.toast-container:last-child');
+            if (toastElement) {
+                toastElement.remove();
+            }
+        }, 5000);
+    }
+
+    // Event Listeners
+    const addActivityBtn = document.getElementById('addActivity');
+    if (addActivityBtn) {
+        addActivityBtn.addEventListener('click', addActivity);
+    }
+    
+    // Remover actividad
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-activity')) {
+            removeActivity(e.target.closest('.remove-activity'));
+        }
+    });
+    
+    // Actualizar porcentajes
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('activity-percentage')) {
+            updateTotalPercentage();
+        }
+    });
+    
+    // Enviar formulario
+    const createPlanForm = document.getElementById('createPlanForm');
+    if (createPlanForm) {
+        createPlanForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const activities = [];
+            const activityItems = document.querySelectorAll('.activity-item');
+            
+            activityItems.forEach(item => {
+                const name = item.querySelector('.activity-name').value;
+                const percentage = parseFloat(item.querySelector('.activity-percentage').value);
+                const date = item.querySelector('.activity-date').value;
+                const description = item.querySelector('.activity-description').value;
+                
+                if (name && percentage) {
+                    activities.push({
+                        name,
+                        percentage,
+                        dueDate: date || null,
+                        description
+                    });
+                }
+            });
+            
+            if (activities.length === 0) {
+                showToast('Debes agregar al menos una actividad', 'error');
+                return;
+            }
+            
+            try {
+                // Obtener información del curso desde la URL o página
+                const pathParts = window.location.pathname.split('/');
+                const courseCode = pathParts[2];
+                const semester = pathParts[3];  
+                const groupNumber = pathParts[4];
+                
+                const response = await fetch(`/courses/${courseCode}/${semester}/${groupNumber}/evaluation-plans`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ activities })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Plan de evaluación creado exitosamente', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast(result.message || 'Error al crear el plan', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al crear el plan de evaluación', 'error');
+            }
+        });
+    }
+
+    // Función global para usar planes
+    window.useThisPlan = useThisPlan;
+});
+</script>
+
+<!-- CSS adicional -->
+<style>
+.modal {
+    z-index: 1050 !important;
+}
+
+.modal-backdrop {
+    z-index: 1040 !important;
+}
+
+.toast-container {
+    z-index: 1060 !important;
+}
+</style> 
