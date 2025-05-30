@@ -180,7 +180,7 @@
                             </div>
                             
                             <button id="calculateBtn" class="btn btn-primary w-100 mb-3">
-                                <i class="bi bi-calculator me-2"></i>Calcular Notas Mínimas
+                                <i class="bi bi-calculator me-2"></i>Guardar Notas Mínimas
                             </button>
                             
                             <div id="calculationResults" class="alert alert-info" style="display: none;">
@@ -257,19 +257,26 @@
             // Debugging - verificar si el script se está cargando
             console.log('Script iniciado');
             
-            // Función global para la calculadora de notas mínimas
-            window.calculateMinimumGrades = function() {
+            // Función global para guardar notas y calcular notas mínimas
+            window.calculateMinimumGrades = async function() {
                 console.log('calculateMinimumGrades ejecutada');
                 
                 const targetGrade = parseFloat(document.getElementById('targetGrade').value);
                 const resultsDiv = document.getElementById('calculationResults');
                 const tableDiv = document.getElementById('minimumGradesTable');
+                const calculateBtn = document.getElementById('calculateBtn');
+                
+                // Deshabilitar botón temporalmente
+                calculateBtn.disabled = true;
+                calculateBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
                 
                 // Obtener datos del servidor
                 const serverData = JSON.parse(document.getElementById('serverData').textContent);
                 const planActivities = serverData.planActivities;
+                const planId = serverData.planId;
                 
-                // Obtener notas ya ingresadas
+                // Recopilar todas las notas ingresadas
+                const grades = [];
                 let currentContribution = 0;
                 let remainingPercentage = 0;
                 let completedActivities = 0;
@@ -277,7 +284,13 @@
                 
                 planActivities.forEach((activity, index) => {
                     const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
-                    const grade = parseFloat(gradeInput.value);
+                    const grade = parseFloat(gradeInput.value) || 0;
+                    
+                    // Agregar al array para guardar (incluso si es 0)
+                    grades.push({
+                        activityIndex: index,
+                        grade: grade
+                    });
                     
                     if (grade && grade > 0) {
                         currentContribution += (grade * activity.percentage) / 100;
@@ -288,6 +301,47 @@
                     }
                 });
                 
+                try {
+                    // Guardar las notas en la base de datos
+                    const response = await fetch('/api/save-grades/' + planId, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ grades: grades })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Mostrar mensaje de éxito
+                        if (typeof showToast === 'function') {
+                            showToast('Notas guardadas exitosamente', 'success');
+                        }
+                        
+                        // Continuar con el cálculo de notas mínimas
+                        calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage);
+                    } else {
+                        throw new Error(result.message || 'Error al guardar las notas');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error al guardar notas:', error);
+                    if (typeof showToast === 'function') {
+                        showToast('Error al guardar las notas: ' + error.message, 'error');
+                    }
+                    
+                    // Continuar con el cálculo aunque falle el guardado
+                    calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage);
+                } finally {
+                    // Rehabilitar botón
+                    calculateBtn.disabled = false;
+                    calculateBtn.innerHTML = '<i class="bi bi-calculator me-2"></i>Guardar Notas Mínimas';
+                }
+            };
+            
+            // Función separada para mostrar los cálculos
+            function calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage) {
                 // Cambiar el estilo del alert según el resultado
                 resultsDiv.className = 'alert mb-3';
                 
@@ -434,7 +488,7 @@
                 
                 tableDiv.innerHTML = tableHTML;
                 resultsDiv.style.display = 'block';
-            };
+            }
             
             // Verificar que la función esté disponible
             console.log('Función asignada:', typeof window.calculateMinimumGrades);
@@ -571,9 +625,45 @@
                     }
                 }
 
+                // Función para cargar las notas guardadas
+                async function loadSavedGrades() {
+                    try {
+                        const serverData = JSON.parse(document.getElementById('serverData').textContent);
+                        const planId = serverData.planId;
+                        
+                        const response = await fetch('/api/get-grades/' + planId);
+                        const result = await response.json();
+                        
+                        if (result.success && result.grades.length > 0) {
+                            console.log('Cargando notas guardadas:', result.grades);
+                            
+                            // Llenar los campos con las notas guardadas
+                            result.grades.forEach(function(gradeData) {
+                                const gradeInput = document.querySelector('[data-activity-index="' + gradeData.activityIndex + '"]');
+                                if (gradeInput && gradeData.grade > 0) {
+                                    gradeInput.value = gradeData.grade.toFixed(1);
+                                }
+                            });
+                            
+                            // Actualizar los cálculos después de cargar las notas
+                            updateCalculations();
+                            
+                            if (typeof showToast === 'function') {
+                                showToast('Notas cargadas desde la base de datos', 'info');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error al cargar notas guardadas:', error);
+                        // No mostrar error al usuario ya que puede ser normal no tener notas guardadas
+                    }
+                }
+
                 // Event Listeners
                 document.addEventListener('DOMContentLoaded', function() {
                     console.log('DOM cargado');
+                    
+                    // Cargar notas guardadas al inicializar
+                    loadSavedGrades();
                     
                     // Event listener para el botón de calcular
                     const calculateBtn = document.getElementById('calculateBtn');

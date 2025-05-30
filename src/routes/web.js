@@ -2845,4 +2845,144 @@ router.get('/api/courses/:subjectCode/:semester/:groupNumber/evaluation-plans', 
   }
 });
 
+// ===== RUTAS PARA GUARDAR Y OBTENER NOTAS =====
+
+// Endpoint para guardar las notas del estudiante
+router.post('/api/save-grades/:planId', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const { grades } = req.body; // Array de { activityIndex, grade }
+    
+    // Verificar autenticación
+    if (!req.session.user || req.session.user.role !== 'student') {
+      return res.status(401).json({
+        success: false,
+        message: 'Debes estar loggeado como estudiante'
+      });
+    }
+    
+    const studentId = req.session.user.id;
+    const StudentGrade = require('../models/StudentGrade');
+
+    // Buscar el plan de evaluación
+    const plan = await EvaluationPlan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan de evaluación no encontrado'
+      });
+    }
+
+    // Buscar o crear el registro del estudiante
+    let studentGrade = await StudentGrade.findOne({
+      studentId: studentId,
+      evaluationPlanId: planId
+    });
+
+    if (!studentGrade) {
+      // Crear nuevo registro con las actividades del plan
+      studentGrade = new StudentGrade({
+        studentId: studentId,
+        evaluationPlanId: planId,
+        subjectCode: plan.subjectCode,
+        semester: plan.semester,
+        groupNumber: plan.groupNumber,
+        activities: plan.activities.map(activity => ({
+          name: activity.name,
+          percentage: activity.percentage,
+          score: null,
+          maxScore: 5,
+          notes: ''
+        }))
+      });
+    }
+
+    // Actualizar las notas
+    grades.forEach(gradeData => {
+      const activityIndex = gradeData.activityIndex;
+      const grade = parseFloat(gradeData.grade) || 0;
+      
+      if (activityIndex >= 0 && activityIndex < studentGrade.activities.length) {
+        studentGrade.activities[activityIndex].score = grade > 0 ? grade : null;
+      }
+    });
+
+    // Calcular la nota actual
+    let currentGrade = 0;
+    studentGrade.activities.forEach(activity => {
+      if (activity.score && activity.score > 0) {
+        currentGrade += (activity.score * activity.percentage) / 100;
+      }
+    });
+    studentGrade.currentGrade = currentGrade;
+
+    // Guardar en la base de datos
+    await studentGrade.save();
+
+    res.json({
+      success: true,
+      message: 'Notas guardadas exitosamente',
+      currentGrade: currentGrade.toFixed(2)
+    });
+
+  } catch (error) {
+    console.error('Error saving grades:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// Endpoint para obtener las notas guardadas del estudiante
+router.get('/api/get-grades/:planId', async (req, res) => {
+  try {
+    const { planId } = req.params;
+    
+    // Verificar autenticación
+    if (!req.session.user || req.session.user.role !== 'student') {
+      return res.status(401).json({
+        success: false,
+        message: 'Debes estar loggeado como estudiante'
+      });
+    }
+    
+    const studentId = req.session.user.id;
+    const StudentGrade = require('../models/StudentGrade');
+
+    // Buscar las notas del estudiante
+    const studentGrade = await StudentGrade.findOne({
+      studentId: studentId,
+      evaluationPlanId: planId
+    });
+
+    if (!studentGrade) {
+      return res.json({
+        success: true,
+        grades: [],
+        currentGrade: 0
+      });
+    }
+
+    // Formatear las notas para el frontend
+    const grades = studentGrade.activities.map((activity, index) => ({
+      activityIndex: index,
+      grade: activity.score || 0
+    })).filter(g => g.grade > 0);
+
+    res.json({
+      success: true,
+      grades: grades,
+      currentGrade: studentGrade.currentGrade || 0
+    });
+
+  } catch (error) {
+    console.error('Error getting grades:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
 module.exports = router; 
