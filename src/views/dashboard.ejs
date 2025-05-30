@@ -1,0 +1,149 @@
+<%- include('layouts/main', { 
+    body: `
+        <div class="container-fluid py-4">
+            <!-- Header súper simple -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <h1 class="display-4 fw-bold text-primary mb-2">Trackademic</h1>
+                    <p class="fs-5 text-muted mb-0">Tu asistente académico simple</p>
+                </div>
+            </div>
+
+            <!-- 3 acciones principales - SÚPER SIMPLES -->
+            <div class="row justify-content-center g-4">
+                <!-- Buscar Cursos -->
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-lg hover-card">
+                        <div class="card-body text-center p-5">
+                            <div class="mb-4">
+                                <i class="bi bi-search text-primary" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="card-title mb-3">Buscar Cursos</h3>
+                            <p class="text-muted mb-4">Encuentra tus materias rápidamente</p>
+                            <a href="/courses/search" class="btn btn-primary btn-lg px-4">
+                                <i class="bi bi-arrow-right me-2"></i>Buscar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mis Notas -->
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-lg hover-card">
+                        <div class="card-body text-center p-5">
+                            <div class="mb-4">
+                                <i class="bi bi-calculator text-success" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="card-title mb-3">Mis Notas</h3>
+                            <p class="text-muted mb-4">Ve tus calificaciones y progreso</p>
+                            <a href="/grades" class="btn btn-success btn-lg px-4">
+                                <i class="bi bi-arrow-right me-2"></i>Ver Notas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Planes de Evaluación -->
+                <div class="col-md-4">
+                    <div class="card h-100 border-0 shadow-lg hover-card">
+                        <div class="card-body text-center p-5">
+                            <div class="mb-4">
+                                <i class="bi bi-clipboard-check text-warning" style="font-size: 4rem;"></i>
+                            </div>
+                            <h3 class="card-title mb-3">Planes de Evaluación</h3>
+                            <p class="text-muted mb-4">Revisa tus actividades pendientes</p>
+                            <a href="/evaluation-plans" class="btn btn-warning btn-lg px-4">
+                                <i class="bi bi-arrow-right me-2"></i>Ver Planes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen rápido - Solo lo esencial -->
+            <div class="row mt-5">
+                <div class="col-12">
+                    <div class="card bg-light border-0">
+                        <div class="card-body p-4">
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <h2 class="text-primary mb-1" id="totalCourses">-</h2>
+                                    <small class="text-muted">Cursos Activos</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h2 class="text-success mb-1" id="avgGrade">-</h2>
+                                    <small class="text-muted">Promedio</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h2 class="text-warning mb-1" id="pendingActivities">-</h2>
+                                    <small class="text-muted">Pendientes</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <h2 class="text-info mb-1" id="semesterProgress">-</h2>
+                                    <small class="text-muted">% Completado</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CSS para efectos hover -->
+        <style>
+            .hover-card {
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            
+            .hover-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+            }
+            
+            .btn-lg {
+                font-size: 1.1rem;
+                padding: 0.8rem 2rem;
+                border-radius: 0.5rem;
+            }
+            
+            .card {
+                border-radius: 1rem;
+            }
+            
+            .display-4 {
+                font-weight: 800;
+            }
+        </style>
+
+        <!-- JavaScript súper simple -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Hacer las tarjetas clickeables
+                document.querySelectorAll('.hover-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const link = this.querySelector('a');
+                        if (link) {
+                            window.location.href = link.href;
+                        }
+                    });
+                });
+
+                // Cargar estadísticas básicas
+                loadSimpleStats();
+            });
+
+            async function loadSimpleStats() {
+                try {
+                    // Datos dummy mientras no hay backend específico
+                    document.getElementById('totalCourses').textContent = '5';
+                    document.getElementById('avgGrade').textContent = '3.8';
+                    document.getElementById('pendingActivities').textContent = '12';
+                    document.getElementById('semesterProgress').textContent = '65%';
+                } catch (error) {
+                    console.log('No se pudieron cargar las estadísticas');
+                }
+            }
+        </script>
+    `
+}) %> 

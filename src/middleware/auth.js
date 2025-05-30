@@ -205,8 +205,8 @@ const checkEvaluationPlanAccess = async (req, res, next) => {
       }
     }
     
-    // Estudiantes pueden acceder a planes aprobados
-    if (req.user.role === 'student' && plan.isApproved) {
+    // Estudiantes pueden acceder a cualquier plan (con advertencias en la UI)
+    if (req.user.role === 'student') {
       return next();
     }
     

@@ -408,71 +408,63 @@
                 
                 // Mostrar modal con loading
                 modal.show();
-                content.innerHTML = \`
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2">Calculando proyecciones...</p>
-                    </div>
-                \`;
+                content.innerHTML = '<div class="text-center">' +
+                    '<div class="spinner-border text-primary" role="status">' +
+                        '<span class="visually-hidden">Cargando...</span>' +
+                    '</div>' +
+                    '<p class="mt-2">Calculando proyecciones...</p>' +
+                '</div>';
                 
                 try {
-                    const response = await fetch(\`/api/grades/\${gradeId}/projections\`);
+                    const response = await fetch('/api/grades/' + gradeId + '/projections');
                     const data = await response.json();
                     
                     if (response.ok) {
-                        content.innerHTML = \`
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Estas proyecciones son estimaciones basadas en tus calificaciones actuales.
-                            </div>
+                        content.innerHTML = '<div class="alert alert-info">' +
+                                '<i class="bi bi-info-circle me-2"></i>' +
+                                'Estas proyecciones son estimaciones basadas en tus calificaciones actuales.' +
+                            '</div>' +
                             
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>Escenarios Posibles:</h6>
-                                    <ul class="list-group">
-                                        \${data.scenarios.map(scenario => \`
-                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                \${scenario.name}
-                                                <span class="badge \${scenario.grade >= 3.0 ? 'bg-success' : 'bg-danger'}">
-                                                    \${scenario.grade.toFixed(2)}
-                                                </span>
-                                            </li>
-                                        \`).join('')}
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <h6>Próximas Actividades:</h6>
-                                    <ul class="list-group">
-                                        \${data.pendingActivities.map(activity => \`
-                                            <li class="list-group-item">
-                                                <div class="fw-medium">\${activity.name}</div>
-                                                <small class="text-muted">\${activity.percentage}% - \${activity.type}</small>
-                                            </li>
-                                        \`).join('')}
-                                    </ul>
-                                </div>
-                            </div>
+                            '<div class="row">' +
+                                '<div class="col-md-6">' +
+                                    '<h6>Escenarios Posibles:</h6>' +
+                                    '<ul class="list-group">' +
+                                        data.scenarios.map(scenario => 
+                                            '<li class="list-group-item d-flex justify-content-between align-items-center">' +
+                                                scenario.name +
+                                                '<span class="badge ' + (scenario.grade >= 3.0 ? 'bg-success' : 'bg-danger') + '">' +
+                                                    scenario.grade.toFixed(2) +
+                                                '</span>' +
+                                            '</li>'
+                                        ).join('') +
+                                    '</ul>' +
+                                '</div>' +
+                                '<div class="col-md-6">' +
+                                    '<h6>Próximas Actividades:</h6>' +
+                                    '<ul class="list-group">' +
+                                        data.pendingActivities.map(activity => 
+                                            '<li class="list-group-item">' +
+                                                '<div class="fw-medium">' + activity.name + '</div>' +
+                                                '<small class="text-muted">' + activity.percentage + '% - ' + activity.type + '</small>' +
+                                            '</li>'
+                                        ).join('') +
+                                    '</ul>' +
+                                '</div>' +
+                            '</div>' +
                             
-                            <div class="mt-3 p-3 bg-light rounded">
-                                <h6>Recomendación:</h6>
-                                <p class="mb-0">\${data.recommendation}</p>
-                            </div>
-                        \`;
+                            '<div class="mt-3 p-3 bg-light rounded">' +
+                                '<h6>Recomendación:</h6>' +
+                                '<p class="mb-0">' + data.recommendation + '</p>' +
+                            '</div>';
                     } else {
-                        content.innerHTML = \`
-                            <div class="alert alert-danger">
-                                Error al cargar las proyecciones: \${data.error}
-                            </div>
-                        \`;
+                        content.innerHTML = '<div class="alert alert-danger">' +
+                                'Error al cargar las proyecciones: ' + data.error +
+                            '</div>';
                     }
                 } catch (error) {
-                    content.innerHTML = \`
-                        <div class="alert alert-danger">
-                            Error de conexión al cargar las proyecciones.
-                        </div>
-                    \`;
+                    content.innerHTML = '<div class="alert alert-danger">' +
+                            'Error de conexión al cargar las proyecciones.' +
+                        '</div>';
                 }
             }
 

@@ -69,7 +69,7 @@ const evaluationPlanSchema = new mongoose.Schema({
   },
   isApproved: {
     type: Boolean,
-    default: false
+    default: true
   },
   approvedBy: {
     type: String,
@@ -87,6 +87,27 @@ const evaluationPlanSchema = new mongoose.Schema({
     required: [true, 'El año académico es requerido'],
     match: [/^\d{4}$/, 'Formato de año académico inválido (ejemplo: 2023)']
   },
+  // Campos para el sistema de versiones
+  versionName: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'El nombre de la versión no puede exceder 100 caracteres'],
+    default: 'Plan Principal'
+  },
+  parentPlanId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'EvaluationPlan',
+    default: null
+  },
+  isMainVersion: {
+    type: Boolean,
+    default: false
+  },
+  usageCount: {
+    type: Number,
+    default: 0,
+    min: [0, 'El contador de uso no puede ser negativo']
+  },
   metadata: {
     faculty: String,
     program: String,
@@ -99,10 +120,20 @@ const evaluationPlanSchema = new mongoose.Schema({
 });
 
 // Índices compuestos para mejorar rendimiento
-evaluationPlanSchema.index({ semester: 1, subjectCode: 1, groupNumber: 1 }, { unique: true });
+// Solo el plan principal debe ser único por curso
+evaluationPlanSchema.index(
+  { semester: 1, subjectCode: 1, groupNumber: 1, isMainVersion: 1 }, 
+  { 
+    unique: true, 
+    partialFilterExpression: { isMainVersion: true } 
+  }
+);
+evaluationPlanSchema.index({ semester: 1, subjectCode: 1, groupNumber: 1 });
 evaluationPlanSchema.index({ professorId: 1, semester: 1 });
 evaluationPlanSchema.index({ createdBy: 1 });
 evaluationPlanSchema.index({ isApproved: 1, isActive: 1 });
+evaluationPlanSchema.index({ parentPlanId: 1 });
+evaluationPlanSchema.index({ usageCount: -1 });
 
 // Virtual para obtener el total de actividades
 evaluationPlanSchema.virtual('totalActivities').get(function() {
@@ -146,6 +177,65 @@ evaluationPlanSchema.methods.approve = function(approvedBy) {
   this.approvedBy = approvedBy;
   this.approvedAt = new Date();
   return this.save();
+};
+
+// Método de instancia para incrementar contador de uso
+evaluationPlanSchema.methods.incrementUsage = function() {
+  this.usageCount += 1;
+  return this.save();
+};
+
+// Método estático para obtener todas las versiones de un curso
+evaluationPlanSchema.statics.findAllVersionsByCourse = function(subjectCode, semester, groupNumber) {
+  return this.find({
+    subjectCode,
+    semester,
+    groupNumber,
+    isActive: true
+  }).sort({ isMainVersion: -1, usageCount: -1, createdAt: 1 });
+};
+
+// Método estático para encontrar o crear el plan principal
+evaluationPlanSchema.statics.findOrCreateMainVersion = async function(subjectCode, semester, groupNumber, professorId) {
+  let mainPlan = await this.findOne({
+    subjectCode,
+    semester,
+    groupNumber,
+    isMainVersion: true,
+    isActive: true
+  });
+
+  if (!mainPlan) {
+    // Si no existe plan principal, el primer plan creado se convierte en principal
+    mainPlan = await this.findOne({
+      subjectCode,
+      semester,
+      groupNumber,
+      isActive: true
+    }).sort({ createdAt: 1 });
+
+    if (mainPlan) {
+      mainPlan.isMainVersion = true;
+      mainPlan.versionName = 'Plan Principal';
+      await mainPlan.save();
+    }
+  }
+
+  return mainPlan;
+};
+
+// Método estático para crear una nueva versión
+evaluationPlanSchema.statics.createVersion = async function(baseData, versionName = null, parentPlanId = null) {
+  const newVersion = new this({
+    ...baseData,
+    versionName: versionName || `Versión ${new Date().toLocaleDateString('es-ES')}`,
+    parentPlanId,
+    isMainVersion: false,
+    isApproved: true,  // Auto-aprobar todas las versiones
+    usageCount: 0
+  });
+
+  return newVersion.save();
 };
 
 module.exports = mongoose.model('EvaluationPlan', evaluationPlanSchema); 

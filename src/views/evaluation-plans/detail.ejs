@@ -9,7 +9,7 @@
                             <h2 class="mb-1">
                                 <i class="bi bi-clipboard-data me-2"></i>Plan de Evaluación
                             </h2>
-                            <p class="text-muted mb-0">${plan.subjectCode} - ${course?.name || 'Curso'}</p>
+                            <p class="text-muted mb-0">${plan.subjectCode} - ${plan.subjectName || 'Curso'}</p>
                         </div>
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb mb-0">
@@ -35,7 +35,11 @@
                                             '<span class="badge bg-white text-success ms-2"><i class="bi bi-check-circle me-1"></i>Aprobado</span>' : 
                                             '<span class="badge bg-white text-warning ms-2"><i class="bi bi-clock me-1"></i>Pendiente</span>'
                                         }
+                                        ${plan.isMainVersion ? 
+                                            '<span class="badge bg-white text-primary ms-2"><i class="bi bi-star-fill me-1"></i>Principal</span>' : ''
+                                        }
                                     </h4>
+                                    <h5 class="fw-bold mb-3 text-white-75">${plan.versionName}</h5>
                                     <div class="row g-3">
                                         <div class="col-md-3">
                                             <small class="text-white-50 d-block">Semestre</small>
@@ -50,8 +54,8 @@
                                             <span class="fw-medium">${new Date(plan.createdAt).toLocaleDateString('es-ES')}</span>
                                         </div>
                                         <div class="col-md-3">
-                                            <small class="text-white-50 d-block">Año Académico</small>
-                                            <span class="fw-medium">${plan.academicYear}</span>
+                                            <small class="text-white-50 d-block">Usos</small>
+                                            <span class="fw-medium">${plan.usageCount || 0}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -225,7 +229,7 @@
                                                 <div class="d-flex align-items-center">
                                                     <i class="bi bi-person-circle text-primary me-2" style="font-size: 1.2rem;"></i>
                                                     <div>
-                                                        <span class="fw-medium">${comment.authorName || 'Usuario'}</span>
+                                                        <span class="fw-medium">Usuario</span>
                                                         <small class="text-muted d-block">
                                                             ${new Date(comment.createdAt).toLocaleString('es-ES')}
                                                         </small>

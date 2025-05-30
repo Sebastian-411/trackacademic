@@ -208,12 +208,13 @@
                                                                         <i class="bi bi-clipboard-check me-1"></i>Ver Planes
                                                                     </a>
                                                                     <% if (user.role === 'student') { %>
-                                                                        <button class="btn btn-success add-to-my-courses" 
+                                                                        <button class="btn btn-success save-plan-btn" 
                                                                                 data-subject-code="<%= subject.code %>"
                                                                                 data-semester="<%= group.semester %>"
                                                                                 data-group-number="<%= group.number %>"
-                                                                                title="Agregar a Mis Materias">
-                                                                            <i class="bi bi-plus"></i>
+                                                                                data-bs-toggle="tooltip"
+                                                                                title="Guardar en Mis Planes">
+                                                                            <i class="bi bi-plus-lg"></i>
                                                                         </button>
                                                                     <% } %>
                                                                 </div>
@@ -307,70 +308,100 @@
             document.getElementById('searchForm').submit();
         });
 
-        // Manejar agregar materia a mis cursos
+        // Manejar guardar plan en mis planes
         document.addEventListener('click', function(e) {
-            if (e.target.closest('.add-to-my-courses')) {
+            if (e.target.closest('.save-plan-btn')) {
                 e.preventDefault();
                 
-                const button = e.target.closest('.add-to-my-courses');
+                const button = e.target.closest('.save-plan-btn');
                 const subjectCode = button.dataset.subjectCode;
                 const semester = button.dataset.semester;
                 const groupNumber = button.dataset.groupNumber;
                 
-                // Buscar el plan de evaluación para este curso/grupo/semestre
-                fetch('/courses/' + subjectCode + '/' + semester + '/' + groupNumber + '/evaluation-plans')
-                    .then(response => response.text())
-                    .then(html => {
-                        // Crear un elemento temporal para extraer los IDs de planes
-                        const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = html;
-                        
-                        // Buscar si hay planes disponibles (esto es una implementación simple)
-                        // En una implementación real, necesitarías una API específica
-                        const planElements = tempDiv.querySelectorAll('[data-plan-id]');
-                        
-                        if (planElements.length > 0) {
-                            const planId = planElements[0].dataset.planId;
-                            addToMyCourses(planId, subjectCode, semester, groupNumber);
+                // Deshabilitar botón temporalmente
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+                
+                // Primero buscar los planes disponibles para este curso
+                fetch(`/api/courses/${subjectCode}/${semester}/${groupNumber}/evaluation-plans`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.plans && data.plans.length > 0) {
+                            // Tomar el primer plan disponible o mostrar selector si hay múltiples
+                            const planToSave = data.plans[0];
+                            savePlanToMyPlans(planToSave._id, subjectCode, semester, groupNumber, button);
                         } else {
-                            showAlert('warning', 'No hay planes de evaluación disponibles para este curso. Puedes crear uno desde la página de planes.');
-                            // Redirigir a la página de planes del curso
-                            window.location.href = '/courses/' + subjectCode + '/' + semester + '/' + groupNumber + '/evaluation-plans';
+                            // No hay planes, redirigir a la página de planes
+                            showAlert('info', 'No hay planes disponibles para este curso. Te redirigiremos para que veas los detalles.');
+                            setTimeout(() => {
+                                window.location.href = `/courses/${subjectCode}/${semester}/${groupNumber}/evaluation-plans`;
+                            }, 2000);
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        showAlert('error', 'Error al verificar los planes de evaluación');
+                        showAlert('warning', 'No se pudieron obtener los planes. Puedes explorar manualmente.');
+                        setTimeout(() => {
+                            window.location.href = `/courses/${subjectCode}/${semester}/${groupNumber}/evaluation-plans`;
+                        }, 2000);
+                    })
+                    .finally(() => {
+                        // Restaurar botón
+                        button.disabled = false;
+                        button.innerHTML = '<i class="bi bi-plus-lg"></i>';
                     });
             }
         });
 
-        function addToMyCourses(evaluationPlanId, subjectCode, semester, groupNumber) {
-            fetch('/api/my-courses/add-from-catalog', {
+        function savePlanToMyPlans(evaluationPlanId, subjectCode, semester, groupNumber, button) {
+            fetch('/api/save-plan', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ evaluationPlanId: evaluationPlanId })
+                body: JSON.stringify({
+                    evaluationPlanId: evaluationPlanId,
+                    subjectCode: subjectCode,
+                    semester: semester,
+                    groupNumber: groupNumber
+                })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showAlert('success', data.message);
+                    // Cambiar el botón a estado "guardado"
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-secondary');
+                    button.innerHTML = '<i class="bi bi-check-lg"></i>';
+                    button.disabled = true;
+                    button.title = 'Ya guardado en Mis Planes';
                     
-                    // Mostrar opción para ir a mis materias
+                    showAlert('success', '¡Plan guardado exitosamente!');
+                    
+                    // Actualizar contador en navbar si existe
+                    updateMyPlansCount();
+                    
+                    // Mostrar opción para ir a mis planes
                     setTimeout(function() {
-                        if (confirm('¿Quieres ir a "Mis Materias" para ver la materia agregada?')) {
-                            window.location.href = '/my-courses';
+                        if (confirm('¿Quieres ver tus planes guardados?')) {
+                            showMyPlansModal();
                         }
                     }, 1500);
                 } else {
-                    showAlert('error', data.message);
+                    if (data.message.includes('Ya tienes este plan guardado')) {
+                        // Plan ya guardado
+                        button.classList.remove('btn-success');
+                        button.classList.add('btn-secondary');
+                        button.innerHTML = '<i class="bi bi-check-lg"></i>';
+                        button.disabled = true;
+                        button.title = 'Ya guardado en Mis Planes';
+                    }
+                    showAlert('info', data.message);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showAlert('error', 'Error al agregar la materia');
+                showAlert('error', 'Error al guardar el plan');
             });
         }
 
@@ -392,6 +423,93 @@
                     alert.remove();
                 }
             }, 5000);
+        }
+
+        // Función para actualizar el contador de planes
+        async function updateMyPlansCount() {
+            try {
+                const response = await fetch('/api/my-plans');
+                const data = await response.json();
+                
+                if (data.success && data.plans.length > 0) {
+                    const countElement = document.getElementById('myPlansCount');
+                    if (countElement) {
+                        countElement.textContent = data.plans.length;
+                        countElement.style.display = 'inline';
+                    }
+                }
+                
+                // También actualizar la sección del dashboard si existe
+                if (typeof window.TrackademicUtils !== 'undefined' && window.TrackademicUtils.refreshDashboardPlans) {
+                    await window.TrackademicUtils.refreshDashboardPlans();
+                }
+            } catch (error) {
+                console.log('No se pudo actualizar el contador de planes');
+            }
+        }
+
+        // Cargar estados de botones al inicio
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar qué planes ya están guardados
+            const saveButtons = document.querySelectorAll('.save-plan-btn');
+            saveButtons.forEach(async (button) => {
+                const subjectCode = button.dataset.subjectCode;
+                const semester = button.dataset.semester;
+                const groupNumber = button.dataset.groupNumber;
+                
+                try {
+                    // Esta es una implementación simplificada
+                    // En una implementación real, necesitarías verificar cada plan específico
+                    const response = await fetch('/api/my-plans');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const isAlreadySaved = data.plans.some(plan => 
+                            plan.subjectCode === subjectCode && 
+                            plan.semester === semester && 
+                            plan.groupNumber === parseInt(groupNumber)
+                        );
+                        
+                        if (isAlreadySaved) {
+                            button.classList.remove('btn-success');
+                            button.classList.add('btn-secondary');
+                            button.innerHTML = '<i class="bi bi-check-lg"></i>';
+                            button.disabled = true;
+                            button.title = 'Ya guardado en Mis Planes';
+                        }
+                    }
+                } catch (error) {
+                    console.log('Error verificando estado del plan');
+                }
+            });
+        });
+
+        function addToMyCourses(evaluationPlanId, subjectCode, semester, groupNumber) {
+            fetch('/api/my-courses/add-from-catalog', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    evaluationPlanId: evaluationPlanId,
+                    subjectCode: subjectCode,
+                    semester: semester,
+                    groupNumber: groupNumber
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', '¡Plan guardado exitosamente!');
+                    updateMyPlansCount();
+                } else {
+                    showAlert('error', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Error al guardar el plan');
+            });
         }
     </script>
 

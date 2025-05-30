@@ -280,6 +280,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
       
       return res.render('dashboard/student', {
         title: 'Mi Dashboard - Trackademic',
+        currentPage: 'dashboard',
         ...dashboardData
       });
       
@@ -429,28 +430,154 @@ router.get('/evaluation-plans/:id', requireAuth, async (req, res) => {
     
     // Verificar acceso
     const user = req.session.user;
-    if (user.role === 'student' && !plan.isApproved) {
+    
+    // Solo los propietarios y administradores tienen acceso total
+    // Los estudiantes pueden ver cualquier plan (con advertencias si no está aprobado)
+    let hasAccess = true;
+    
+    if (user.role === 'professor' && plan.professorId !== user.id && !plan.isApproved) {
+      hasAccess = false;
+    } else if (user.role === 'coordinator') {
+      // Verificar si el profesor del plan pertenece a la misma facultad
+      const { data: professorData } = await supabase
+        .from('employees')
+        .select('faculty_code')
+        .eq('id', plan.professorId)
+        .single();
+      
+      if (!professorData || professorData.faculty_code !== user.facultyCode) {
+        hasAccess = false;
+      }
+    }
+    
+    if (!hasAccess) {
       return res.render('error', {
         title: 'Acceso Denegado',
-        error: { status: 403, message: 'No puedes ver este plan ya que aún no está aprobado.' },
+        error: { status: 403, message: 'No tienes permisos para ver este plan de evaluación.' },
         user
       });
     }
     
     // Obtener comentarios del plan
-    const comments = await Comment.find({
-      evaluationPlanId: plan._id,
-      status: 'active'
-    }).sort({ createdAt: -1 }).limit(20);
+    const comments = await Comment.findByEvaluationPlan(plan._id, {
+      status: 'active',
+      limit: 50
+    });
+
+    // Obtener calificaciones del estudiante si está loggeado como estudiante
+    let studentGrade = null;
+    let gradeStatus = null;
     
-    // Información adicional
+    if (req.session.user.role === 'student') {
+      const StudentGrade = require('../models/StudentGrade');
+      studentGrade = await StudentGrade.findOne({
+        studentId: req.session.user.id,
+        evaluationPlanId: plan._id
+      });
+      
+      if (studentGrade) {
+        const currentGrade = studentGrade.currentGrade || 0;
+        const progress = studentGrade.progress || 0;
+        
+        // Calcular estado de la materia
+        if (progress >= 100) {
+          // Materia completada
+          if (currentGrade >= 4.5) {
+            gradeStatus = {
+              type: 'excellent',
+              message: '¡Excelente! Has ganado la materia',
+              icon: 'bi-trophy-fill',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 4.0) {
+            gradeStatus = {
+              type: 'very-good',
+              message: '¡Muy bien! Has aprobado con buena nota',
+              icon: 'bi-award-fill',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 3.0) {
+            gradeStatus = {
+              type: 'passed',
+              message: 'Has aprobado la materia',
+              icon: 'bi-check-circle-fill',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else {
+            gradeStatus = {
+              type: 'failed',
+              message: 'Has reprobado la materia',
+              icon: 'bi-x-circle-fill',
+              color: 'danger',
+              bgColor: 'bg-danger'
+            };
+          }
+        } else {
+          // Materia en progreso
+          if (currentGrade >= 4.0) {
+            gradeStatus = {
+              type: 'excellent-progress',
+              message: '¡Vas excelente! Mantén el ritmo',
+              icon: 'bi-graph-up-arrow',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 3.5) {
+            gradeStatus = {
+              type: 'good-progress',
+              message: 'Vas muy bien, sigue así',
+              icon: 'bi-graph-up',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 3.0) {
+            gradeStatus = {
+              type: 'warning-progress',
+              message: 'Vas bien, pero puedes mejorar',
+              icon: 'bi-graph-up',
+              color: 'warning',
+              bgColor: 'bg-warning'
+            };
+          } else if (currentGrade >= 2.0) {
+            gradeStatus = {
+              type: 'risk',
+              message: '⚠️ Estás en riesgo, necesitas mejorar',
+              icon: 'bi-exclamation-triangle-fill',
+              color: 'warning',
+              bgColor: 'bg-warning'
+            };
+          } else if (currentGrade > 0) {
+            gradeStatus = {
+              type: 'critical',
+              message: '🚨 Situación crítica, necesitas ayuda urgente',
+              icon: 'bi-exclamation-triangle-fill',
+              color: 'danger',
+              bgColor: 'bg-danger'
+            };
+          } else {
+            gradeStatus = {
+              type: 'no-grades',
+              message: 'Aún no tienes calificaciones registradas',
+              icon: 'bi-clipboard-data',
+              color: 'info',
+              bgColor: 'bg-info'
+            };
+          }
+        }
+      }
+    }
+
+    // Obtener información adicional de materias y profesores  
     const [subjectInfo, professorInfo] = await Promise.all([
       supabase.from('subjects').select('name').eq('code', plan.subjectCode).single(),
       supabase.from('employees').select('first_name, last_name, email').eq('id', plan.professorId).single()
     ]);
-    
+
     res.render('evaluation-plans/detail', {
-      title: `Plan de ${plan.subjectCode} - Trackademic`,
+      title: `Plan de Evaluación - ${plan.subjectCode}`,
       user,
       plan: {
         ...plan.toObject(),
@@ -460,7 +587,9 @@ router.get('/evaluation-plans/:id', requireAuth, async (req, res) => {
           : 'Profesor no encontrado',
         professorEmail: professorInfo.data?.email
       },
-      comments
+      comments,
+      gradeStatus,
+      studentGrade
     });
   } catch (error) {
     logger.error('Error viendo plan:', error);
@@ -517,6 +646,7 @@ router.get('/grades', requireAuth, requireRole('student'), async (req, res) => {
     
     res.render('grades/index', {
       title: 'Mis Calificaciones - Trackademic',
+      currentPage: 'grades',
       user,
       grades: enrichedGrades,
       stats,
@@ -646,6 +776,7 @@ router.get('/courses/search', requireAuth, async (req, res) => {
     if (!subjects || subjects.length === 0) {
       return res.render('courses/search', {
         user: req.session.user,
+        currentPage: 'search',
         subjects: [],
         searchParams: { search, professor, semester },
         pagination: { currentPage: parseInt(page), hasNext: false, hasPrev: false },
@@ -740,6 +871,7 @@ router.get('/courses/search', requireAuth, async (req, res) => {
 
     res.render('courses/search', {
       user: req.session.user,
+      currentPage: 'search',
       subjects: paginatedResults,
       searchParams: { search, professor, semester },
       pagination: {
@@ -812,14 +944,30 @@ router.get('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans', requ
       }
     }
 
-    // Obtener planes de evaluación desde MongoDB
-    const EvaluationPlan = require('../models/EvaluationPlan');
-    const evaluationPlans = await EvaluationPlan.find({
-      subjectCode: subjectCode.toUpperCase(),
-      semester: semester,
-      groupNumber: parseInt(groupNumber),
-      isActive: true
-    }).sort({ createdAt: -1 });
+    // Obtener planes de evaluación desde MongoDB - TODAS LAS VERSIONES
+    const evaluationPlans = await EvaluationPlan.findAllVersionsByCourse(
+      subjectCode.toUpperCase(),
+      semester,
+      parseInt(groupNumber)
+    );
+
+    // Asegurar que existe un plan principal
+    if (evaluationPlans.length > 0) {
+      await EvaluationPlan.findOrCreateMainVersion(
+        subjectCode.toUpperCase(),
+        semester,
+        parseInt(groupNumber),
+        professorInfo?.id
+      );
+      
+      // Recargar los planes después de asegurar el principal
+      const updatedPlans = await EvaluationPlan.findAllVersionsByCourse(
+        subjectCode.toUpperCase(),
+        semester,
+        parseInt(groupNumber)
+      );
+      evaluationPlans.splice(0, evaluationPlans.length, ...updatedPlans);
+    }
 
     res.render('courses/evaluation-plans', {
       user: req.session.user,
@@ -874,6 +1022,7 @@ router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans', req
       subjectCode: subjectCode.toUpperCase(),
       groupNumber: parseInt(groupNumber),
       professorId: req.session.user.id,
+      academicYear: semester.split('-')[0], // Extraer el año del semestre (ej: "2023" de "2023-2")
       activities: activities.map(activity => ({
         name: activity.name,
         percentage: parseFloat(activity.percentage),
@@ -881,7 +1030,7 @@ router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans', req
         dueDate: activity.dueDate ? new Date(activity.dueDate) : null
       })),
       createdBy: req.session.user.id,
-      isApproved: req.session.user.role === 'admin' // Auto-aprobar si es admin
+      isApproved: true  // Auto-aprobar todos los planes
     });
 
     await newPlan.save();
@@ -894,6 +1043,15 @@ router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans', req
 
   } catch (error) {
     console.error('Error al crear plan de evaluación:', error);
+    
+    // Manejar error de clave duplicada
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'Ya existe un plan de evaluación para esta materia, grupo y semestre. Solo se permite un plan por combinación.'
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Error al crear el plan de evaluación'
@@ -948,24 +1106,131 @@ router.get('/evaluation-plans/:planId', requireAuth, async (req, res) => {
     }
 
     // Obtener comentarios del plan
-    const Comment = require('../models/Comment');
-    const comments = await Comment.find({
-      targetType: 'evaluation_plan',
-      targetId: planId
-    }).sort({ createdAt: -1 });
+    const comments = await Comment.findByEvaluationPlan(plan._id, {
+      status: 'active',
+      limit: 50
+    });
+
+    // Obtener calificaciones del estudiante si está loggeado como estudiante
+    let studentGrade = null;
+    let gradeStatus = null;
+    
+    if (req.session.user.role === 'student') {
+      const StudentGrade = require('../models/StudentGrade');
+      studentGrade = await StudentGrade.findOne({
+        studentId: req.session.user.id,
+        evaluationPlanId: plan._id
+      });
+      
+      if (studentGrade) {
+        const currentGrade = studentGrade.currentGrade || 0;
+        const progress = studentGrade.progress || 0;
+        
+        // Calcular estado de la materia
+        if (progress >= 100) {
+          // Materia completada
+          if (currentGrade >= 4.5) {
+            gradeStatus = {
+              type: 'excellent',
+              message: '¡Excelente! Has ganado la materia',
+              icon: 'bi-trophy-fill',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 4.0) {
+            gradeStatus = {
+              type: 'very-good',
+              message: '¡Muy bien! Has aprobado con buena nota',
+              icon: 'bi-award-fill',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 3.0) {
+            gradeStatus = {
+              type: 'passed',
+              message: 'Has aprobado la materia',
+              icon: 'bi-check-circle-fill',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else {
+            gradeStatus = {
+              type: 'failed',
+              message: 'Has reprobado la materia',
+              icon: 'bi-x-circle-fill',
+              color: 'danger',
+              bgColor: 'bg-danger'
+            };
+          }
+        } else {
+          // Materia en progreso
+          if (currentGrade >= 4.0) {
+            gradeStatus = {
+              type: 'excellent-progress',
+              message: '¡Vas excelente! Mantén el ritmo',
+              icon: 'bi-graph-up-arrow',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 3.5) {
+            gradeStatus = {
+              type: 'good-progress',
+              message: 'Vas muy bien, sigue así',
+              icon: 'bi-graph-up',
+              color: 'success',
+              bgColor: 'bg-success'
+            };
+          } else if (currentGrade >= 3.0) {
+            gradeStatus = {
+              type: 'warning-progress',
+              message: 'Vas bien, pero puedes mejorar',
+              icon: 'bi-graph-up',
+              color: 'warning',
+              bgColor: 'bg-warning'
+            };
+          } else if (currentGrade >= 2.0) {
+            gradeStatus = {
+              type: 'risk',
+              message: '⚠️ Estás en riesgo, necesitas mejorar',
+              icon: 'bi-exclamation-triangle-fill',
+              color: 'warning',
+              bgColor: 'bg-warning'
+            };
+          } else if (currentGrade > 0) {
+            gradeStatus = {
+              type: 'critical',
+              message: '🚨 Situación crítica, necesitas ayuda urgente',
+              icon: 'bi-exclamation-triangle-fill',
+              color: 'danger',
+              bgColor: 'bg-danger'
+            };
+          } else {
+            gradeStatus = {
+              type: 'no-grades',
+              message: 'Aún no tienes calificaciones registradas',
+              icon: 'bi-clipboard-data',
+              color: 'info',
+              bgColor: 'bg-info'
+            };
+          }
+        }
+      }
+    }
 
     res.render('evaluation-plans/detail', {
-      user: req.session.user,
-      plan,
-      course: {
-        ...courseInfo,
-        groups: groupInfo ? [{
-          ...groupInfo,
-          employees: professorInfo
-        }] : []
+      title: `Plan de Evaluación - ${plan.subjectCode}`,
+      user,
+      plan: {
+        ...plan.toObject(),
+        subjectName: subjectInfo.data?.name || plan.subjectCode,
+        professorName: professorInfo.data 
+          ? `${professorInfo.data.first_name} ${professorInfo.data.last_name}`
+          : 'Profesor no encontrado',
+        professorEmail: professorInfo.data?.email
       },
       comments,
-      title: `Plan de Evaluación - ${plan.subjectCode}`
+      gradeStatus,
+      studentGrade
     });
 
   } catch (error) {
@@ -984,28 +1249,141 @@ router.post('/evaluation-plans/:planId/comments', requireAuth, async (req, res) 
     const { planId } = req.params;
     const { content } = req.body;
 
-    const Comment = require('../models/Comment');
-    const newComment = new Comment({
-      targetType: 'evaluation_plan',
-      targetId: planId,
-      content: content,
-      authorId: req.session.user.id,
-      authorName: `${req.session.user.firstName} ${req.session.user.lastName}`
+    console.log('Debug comentario - Estado inicial:', {
+      planId,
+      content,
+      contentLength: content?.length,
+      sessionExists: !!req.session,
+      userExists: !!req.session?.user,
+      userKeys: req.session?.user ? Object.keys(req.session.user) : null,
+      fullUser: req.session?.user
     });
 
+    // Validaciones básicas
+    if (!planId || !content || !content.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Faltan datos requeridos para crear el comentario (planId y content son obligatorios)'
+      });
+    }
+
+    if (!req.session?.user) {
+      console.error('Usuario no autenticado - sesión:', req.session);
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado - inicia sesión nuevamente'
+      });
+    }
+
+    // Obtener el ID del usuario con múltiples fallbacks
+    const sessionUser = req.session.user;
+    const userId = sessionUser.id || sessionUser._id || sessionUser.userId || sessionUser.user_id;
+    
+    console.log('Debug userId extraction:', {
+      sessionUser,
+      extractedUserId: userId,
+      id: sessionUser.id,
+      _id: sessionUser._id,
+      userId: sessionUser.userId,
+      user_id: sessionUser.user_id
+    });
+    
+    if (!userId) {
+      console.error('No se pudo obtener userId de la sesión:', {
+        sessionUser,
+        sessionKeys: Object.keys(sessionUser)
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'ID de usuario no encontrado en la sesión. Por favor, inicia sesión nuevamente.'
+      });
+    }
+
+    const mongoose = require('mongoose');
+    
+    // Verificar que el planId sea un ObjectId válido
+    if (!mongoose.Types.ObjectId.isValid(planId)) {
+      console.error('planId inválido:', planId);
+      return res.status(400).json({
+        success: false,
+        message: 'ID de plan inválido'
+      });
+    }
+
+    // Verificar que el plan de evaluación existe
+    const EvaluationPlan = require('../models/EvaluationPlan');
+    const evaluationPlan = await EvaluationPlan.findById(planId);
+    
+    if (!evaluationPlan) {
+      console.error('Plan de evaluación no encontrado:', planId);
+      return res.status(404).json({
+        success: false,
+        message: 'Plan de evaluación no encontrado'
+      });
+    }
+
+    console.log('Plan de evaluación encontrado:', {
+      planId: evaluationPlan._id,
+      semester: evaluationPlan.semester,
+      subjectCode: evaluationPlan.subjectCode
+    });
+
+    // Crear el comentario con validación explícita
+    const commentData = {
+      evaluationPlanId: new mongoose.Types.ObjectId(planId), // Asegurar que sea ObjectId
+      userId: userId.toString(), // Asegurar que sea string
+      content: content.trim(),
+      metadata: {
+        userRole: sessionUser.role || 'student',
+        semester: evaluationPlan.semester || '',
+        subjectCode: evaluationPlan.subjectCode || ''
+      }
+    };
+
+    console.log('Datos del comentario antes de crear:', {
+      ...commentData,
+      evaluationPlanIdType: typeof commentData.evaluationPlanId,
+      userIdType: typeof commentData.userId,
+      userIdLength: commentData.userId.length
+    });
+
+    const newComment = new Comment(commentData);
+
+    // Validar antes de guardar
+    const validationError = newComment.validateSync();
+    if (validationError) {
+      console.error('Error de validación antes de guardar:', validationError);
+      return res.status(400).json({
+        success: false,
+        message: 'Datos del comentario inválidos: ' + validationError.message
+      });
+    }
+
+    console.log('Intentando guardar comentario...');
     await newComment.save();
+    console.log('Comentario guardado exitosamente:', newComment._id);
 
     res.json({
       success: true,
       message: 'Comentario agregado exitosamente',
-      comment: newComment
+      comment: {
+        _id: newComment._id,
+        content: newComment.content,
+        createdAt: newComment.createdAt,
+        userId: newComment.userId
+      }
     });
 
   } catch (error) {
-    console.error('Error al agregar comentario:', error);
+    console.error('Error completo al agregar comentario:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
     res.status(500).json({
       success: false,
-      message: 'Error al agregar el comentario'
+      message: 'Error al agregar el comentario: ' + error.message
     });
   }
 });
@@ -1931,6 +2309,538 @@ router.get('/create-evaluation-plan', requireAuth, async (req, res) => {
       title: 'Error',
       error: { status: 500, message: 'Error interno del servidor' },
       user: req.session.user
+    });
+  }
+});
+
+// Ruta para crear una nueva versión de plan de evaluación
+router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans/version', requireAuth, async (req, res) => {
+  try {
+    const { subjectCode, semester, groupNumber } = req.params;
+    const { versionName, basePlanId } = req.body;
+
+    if (!versionName || versionName.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre de la versión es requerido'
+      });
+    }
+
+    const EvaluationPlan = require('../models/EvaluationPlan');
+    
+    // Obtener datos base (desde plan existente o valores por defecto)
+    let baseData = {
+      semester,
+      subjectCode: subjectCode.toUpperCase(),
+      groupNumber: parseInt(groupNumber),
+      professorId: req.session.user.id,
+      academicYear: semester.split('-')[0], // Extraer el año del semestre (ej: "2023" de "2023-2")
+      activities: [],
+      createdBy: req.session.user.id
+    };
+
+    if (basePlanId) {
+      const basePlan = await EvaluationPlan.findById(basePlanId);
+      if (basePlan) {
+        baseData.activities = basePlan.activities.map(activity => ({
+          name: activity.name,
+          percentage: activity.percentage,
+          description: activity.description,
+          dueDate: activity.dueDate
+        }));
+        baseData.professorId = basePlan.professorId;
+      }
+    }
+
+    // Si no hay actividades, crear una actividad por defecto
+    if (baseData.activities.length === 0) {
+      baseData.activities = [{
+        name: 'Actividad 1',
+        percentage: 100,
+        description: 'Actividad de ejemplo - modifica según necesites'
+      }];
+    }
+
+    // Crear nueva versión
+    const newVersion = await EvaluationPlan.createVersion(
+      baseData,
+      versionName.trim(),
+      basePlanId || null
+    );
+
+    res.json({
+      success: true,
+      message: 'Versión creada exitosamente',
+      versionId: newVersion._id
+    });
+
+  } catch (error) {
+    console.error('Error al crear versión:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al crear la versión'
+    });
+  }
+});
+
+// Ruta para incrementar contador de uso de un plan
+router.post('/api/evaluation-plans/:planId/use', requireAuth, async (req, res) => {
+  try {
+    const { planId } = req.params;
+    
+    const EvaluationPlan = require('../models/EvaluationPlan');
+    const plan = await EvaluationPlan.findById(planId);
+    
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan no encontrado'
+      });
+    }
+    
+    await plan.incrementUsage();
+    
+    res.json({
+      success: true,
+      usageCount: plan.usageCount
+    });
+    
+  } catch (error) {
+    console.error('Error al incrementar uso:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al registrar uso'
+    });
+  }
+});
+
+// Ruta para obtener datos de un plan específico (para copiar)
+router.get('/api/evaluation-plans/:planId', requireAuth, async (req, res) => {
+  try {
+    const { planId } = req.params;
+    
+    const EvaluationPlan = require('../models/EvaluationPlan');
+    const plan = await EvaluationPlan.findById(planId);
+    
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan no encontrado'
+      });
+    }
+    
+    res.json({
+      success: true,
+      plan: {
+        _id: plan._id,
+        versionName: plan.versionName,
+        activities: plan.activities,
+        isMainVersion: plan.isMainVersion,
+        usageCount: plan.usageCount
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error al obtener plan:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener datos del plan'
+    });
+  }
+});
+
+// Ruta simplificada para usar un plan como calculadora de notas
+router.get('/evaluation-plans/:planId/calculator', requireAuth, async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const EvaluationPlan = require('../models/EvaluationPlan');
+    
+    const plan = await EvaluationPlan.findById(planId);
+    
+    if (!plan) {
+      return res.status(404).render('error', {
+        title: 'Error - Trackademic',
+        message: 'Plan de evaluación no encontrado',
+        error: { status: 404 }
+      });
+    }
+
+    // Obtener información del curso
+    const { data: courseInfo } = await supabase
+      .from('subjects')
+      .select('code, name')
+      .eq('code', plan.subjectCode)
+      .single();
+
+    // Verificar si el estudiante ya tiene un registro de notas para este plan
+    const StudentGrade = require('../models/StudentGrade');
+    let studentGrade = await StudentGrade.findOne({
+      studentId: req.session.user.id,
+      evaluationPlanId: planId
+    });
+
+    // Si no existe, crear uno nuevo
+    if (!studentGrade && req.session.user.role === 'student') {
+      studentGrade = new StudentGrade({
+        studentId: req.session.user.id,
+        evaluationPlanId: planId,
+        subjectCode: plan.subjectCode,
+        semester: plan.semester,
+        groupNumber: plan.groupNumber,
+        activities: plan.activities.map(activity => ({
+          name: activity.name,
+          percentage: activity.percentage,
+          score: null,
+          maxScore: 5,
+          notes: ''
+        }))
+      });
+      await studentGrade.save();
+    }
+
+    res.render('evaluation-plans/calculator', {
+      title: `Calculadora - ${plan.subjectCode} - Trackademic`,
+      user: req.session.user,
+      plan,
+      studentGrade,
+      subjectName: courseInfo?.name || plan.subjectCode
+    });
+
+  } catch (error) {
+    console.error('Error al cargar calculadora:', error);
+    res.status(500).render('error', {
+      title: 'Error - Trackademic',
+      message: 'Error al cargar la calculadora',
+      error: { status: 500, stack: error.stack }
+    });
+  }
+});
+
+// API para guardar una nota en la calculadora
+router.post('/api/calculator/:gradeId/activity/:activityName', requireAuth, async (req, res) => {
+  try {
+    const { gradeId, activityName } = req.params;
+    const { score, notes } = req.body;
+    
+    const StudentGrade = require('../models/StudentGrade');
+    const studentGrade = await StudentGrade.findOne({
+      _id: gradeId,
+      studentId: req.session.user.id
+    });
+    
+    if (!studentGrade) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registro de notas no encontrado'
+      });
+    }
+    
+    const parsedScore = parseFloat(score);
+    if (isNaN(parsedScore) || parsedScore < 0 || parsedScore > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'La nota debe ser un número entre 0 y 5'
+      });
+    }
+    
+    studentGrade.updateActivityScore(activityName, parsedScore, notes || '');
+    await studentGrade.save();
+    
+    res.json({
+      success: true,
+      message: 'Nota guardada exitosamente',
+      currentGrade: studentGrade.currentGrade,
+      progress: studentGrade.progress,
+      isComplete: studentGrade.isComplete
+    });
+    
+  } catch (error) {
+    console.error('Error al guardar nota:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Error al guardar la nota'
+    });
+  }
+});
+
+// API para obtener los planes guardados del estudiante
+router.get('/api/my-plans', requireAuth, requireRole('student'), async (req, res) => {
+  try {
+    const StudentGrade = require('../models/StudentGrade');
+    
+    // Obtener los planes que el estudiante ha guardado
+    const myGrades = await StudentGrade.find({
+      studentId: req.session.user.id
+    }).populate('evaluationPlanId').sort({ updatedAt: -1 });
+
+    // Transformar los datos para el frontend
+    const plans = myGrades.map(grade => ({
+      _id: grade.evaluationPlanId._id,
+      subjectCode: grade.subjectCode,
+      semester: grade.semester,
+      groupNumber: grade.groupNumber,
+      savedAt: grade.createdAt,
+      lastUpdated: grade.updatedAt,
+      currentGrade: grade.currentGrade,
+      progress: grade.progress,
+      isComplete: grade.isComplete
+    }));
+
+    res.json({
+      success: true,
+      plans: plans
+    });
+
+  } catch (error) {
+    console.error('Error al obtener planes del estudiante:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener los planes',
+      plans: []
+    });
+  }
+});
+
+// API para guardar un plan como "mío" (botón +)
+router.post('/api/save-plan', requireAuth, requireRole('student'), async (req, res) => {
+  try {
+    const { evaluationPlanId, subjectCode, semester, groupNumber } = req.body;
+    const StudentGrade = require('../models/StudentGrade');
+    const EvaluationPlan = require('../models/EvaluationPlan');
+
+    console.log('Datos para guardar plan:', {
+      evaluationPlanId,
+      subjectCode,
+      semester,
+      groupNumber,
+      studentId: req.session.user.id
+    });
+
+    // Verificar que el plan de evaluación existe
+    const existingPlan = await EvaluationPlan.findById(evaluationPlanId);
+    if (!existingPlan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan de evaluación no encontrado'
+      });
+    }
+
+    console.log('Plan encontrado:', {
+      planId: existingPlan._id,
+      subjectCode: existingPlan.subjectCode,
+      activities: existingPlan.activities,
+      activitiesCount: existingPlan.activities.length,
+      firstActivity: existingPlan.activities[0],
+      activitiesJSON: JSON.stringify(existingPlan.activities, null, 2)
+    });
+
+    // Verificar si ya existe este plan para el estudiante
+    const existingGrade = await StudentGrade.findOne({
+      studentId: req.session.user.id,
+      evaluationPlanId: evaluationPlanId
+    });
+
+    if (existingGrade) {
+      return res.status(409).json({
+        success: false,
+        message: 'Ya tienes este plan guardado'
+      });
+    }
+
+    // Validar que el plan tenga actividades
+    if (!existingPlan.activities || existingPlan.activities.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'El plan de evaluación no tiene actividades definidas'
+      });
+    }
+
+    // Validar que todas las actividades tengan name y percentage
+    const invalidActivities = existingPlan.activities.filter(activity => 
+      !activity.name || typeof activity.percentage !== 'number'
+    );
+
+    if (invalidActivities.length > 0) {
+      console.log('Actividades inválidas encontradas:', invalidActivities);
+      return res.status(400).json({
+        success: false,
+        message: 'El plan de evaluación tiene actividades con datos incompletos'
+      });
+    }
+
+    // Debug manual de cada actividad
+    console.log('=== DEBUG MANUAL DE ACTIVIDADES ===');
+    existingPlan.activities.forEach((activity, index) => {
+      console.log(`Actividad ${index}:`, {
+        hasName: !!activity.name,
+        name: activity.name,
+        nameType: typeof activity.name,
+        hasPercentage: !!activity.percentage,
+        percentage: activity.percentage,
+        percentageType: typeof activity.percentage,
+        fullObject: activity.toObject ? activity.toObject() : activity
+      });
+    });
+    console.log('=== FIN DEBUG MANUAL ===');
+
+    console.log('Creando StudentGrade con actividades:', existingPlan.activities.map(activity => ({
+      name: activity.name,
+      percentage: activity.percentage
+    })));
+
+    // Crear actividades seguras - fallback si hay problemas
+    let activitiesForStudent;
+    try {
+      activitiesForStudent = existingPlan.activities.map(activity => ({
+        name: activity.name || 'Actividad sin nombre',
+        percentage: activity.percentage || 100,
+        score: null,
+        maxScore: 5,
+        notes: ''
+      }));
+      
+      // Verificar que las actividades tengan datos válidos
+      const totalPercentage = activitiesForStudent.reduce((sum, act) => sum + act.percentage, 0);
+      console.log('Total percentage:', totalPercentage);
+      
+      if (totalPercentage === 0) {
+        console.log('Creando actividad por defecto porque el plan no tiene porcentajes válidos');
+        activitiesForStudent = [{
+          name: 'Evaluación General',
+          percentage: 100,
+          score: null,
+          maxScore: 5,
+          notes: ''
+        }];
+      }
+    } catch (error) {
+      console.error('Error procesando actividades, usando fallback:', error);
+      activitiesForStudent = [{
+        name: 'Evaluación General',
+        percentage: 100,
+        score: null,
+        maxScore: 5,
+        notes: ''
+      }];
+    }
+
+    console.log('Actividades finales para StudentGrade:', activitiesForStudent);
+
+    // Crear nuevo registro de calificación para el estudiante
+    const newGrade = new StudentGrade({
+      studentId: req.session.user.id,
+      evaluationPlanId: evaluationPlanId,
+      subjectCode: subjectCode || existingPlan.subjectCode,
+      semester: semester || existingPlan.semester,
+      groupNumber: groupNumber || existingPlan.groupNumber,
+      currentGrade: 0,
+      progress: 0,
+      activities: activitiesForStudent
+    });
+
+    await newGrade.save();
+
+    res.json({
+      success: true,
+      message: 'Plan guardado exitosamente',
+      planId: evaluationPlanId
+    });
+
+  } catch (error) {
+    console.error('Error saving plan:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// API para remover un plan de "mis planes"
+router.delete('/api/my-plans/:planId', requireAuth, requireRole('student'), async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const StudentGrade = require('../models/StudentGrade');
+
+    // Eliminar el registro de calificación del estudiante
+    const result = await StudentGrade.deleteOne({
+      studentId: req.session.user.id,
+      evaluationPlanId: planId
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan no encontrado en tus guardados'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Plan removido exitosamente'
+    });
+
+  } catch (error) {
+    console.error('Error removing plan:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// API para verificar si un plan está guardado
+router.get('/api/check-saved-plan/:planId', requireAuth, requireRole('student'), async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const StudentGrade = require('../models/StudentGrade');
+
+    const existingGrade = await StudentGrade.findOne({
+      studentId: req.session.user.id,
+      evaluationPlanId: planId
+    });
+
+    res.json({
+      success: true,
+      isSaved: !!existingGrade
+    });
+
+  } catch (error) {
+    console.error('Error checking saved plan:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+});
+
+// API para obtener planes de evaluación de un curso específico
+router.get('/api/courses/:subjectCode/:semester/:groupNumber/evaluation-plans', async (req, res) => {
+  try {
+    const { subjectCode, semester, groupNumber } = req.params;
+    const EvaluationPlan = require('../models/EvaluationPlan');
+
+    console.log('Buscando planes para:', { subjectCode, semester, groupNumber });
+
+    // Buscar planes de evaluación para este curso específico
+    const plans = await EvaluationPlan.find({
+      subjectCode: subjectCode,
+      semester: semester,
+      groupNumber: parseInt(groupNumber)
+    }).sort({ createdAt: -1 });
+
+    console.log('Planes encontrados:', plans.length);
+
+    res.json({
+      success: true,
+      plans: plans,
+      count: plans.length
+    });
+
+  } catch (error) {
+    console.error('Error getting course evaluation plans:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
     });
   }
 });

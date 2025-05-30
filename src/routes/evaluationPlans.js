@@ -246,6 +246,7 @@ router.post('/', authenticate, async (req, res) => {
       subjectCode: subjectCode.toUpperCase(),
       groupNumber,
       professorId,
+      academicYear: semester.split('-')[0], // Extraer el año del semestre
       activities,
       createdBy: req.user.id,
       isApproved: req.user.role === 'admin' // Admins pueden auto-aprobar

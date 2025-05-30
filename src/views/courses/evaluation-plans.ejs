@@ -66,28 +66,48 @@
                     <div class="card shadow-sm">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="card-title mb-0">
-                                <i class="bi bi-list-ul me-2"></i>Planes de Evaluación Disponibles
+                                <i class="bi bi-list-ul me-2"></i>Versiones de Planes de Evaluación
+                                <span class="badge bg-secondary">${evaluationPlans.length}</span>
                             </h5>
-                            <div>
-                                ${['professor', 'coordinator', 'admin', 'student'].includes(user.role) ? `
-                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
-                                        <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Plan
+                            <div class="d-flex gap-2">
+                                ${evaluationPlans.length > 0 ? `
+                                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createVersionModal">
+                                        <i class="bi bi-plus-circle me-2"></i>Nueva Versión
                                     </button>
+                                ` : ''}
+                                ${['professor', 'coordinator', 'admin', 'student'].includes(user.role) ? `
+                                    ${evaluationPlans.length === 0 ? `
+                                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPlanModal">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear Plan Principal
+                                        </button>
+                                    ` : ''}
                                 ` : ''}
                             </div>
                         </div>
                         <div class="card-body">
                             ${evaluationPlans.length > 0 ? `
+                                <div class="alert alert-info mb-4">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>Sistema de Versiones:</strong> Este curso tiene ${evaluationPlans.length} versión${evaluationPlans.length > 1 ? 'es' : ''} de planes de evaluación. 
+                                    Puedes usar cualquiera o crear tu propia versión personalizada.
+                                </div>
                                 <div class="row g-4">
                                     ${evaluationPlans.map((plan, index) => `
                                         <div class="col-lg-6 col-xl-4">
-                                            <div class="card h-100 border-0 shadow-sm">
+                                            <div class="card h-100 border-0 shadow-sm ${plan.isMainVersion ? 'border-primary' : ''}">
+                                                ${plan.isMainVersion ? `
+                                                    <div class="card-header bg-primary text-white py-2">
+                                                        <i class="bi bi-star-fill me-1"></i>
+                                                        <small class="fw-medium">PLAN PRINCIPAL</small>
+                                                    </div>
+                                                ` : ''}
                                                 <div class="card-body">
                                                     <div class="d-flex justify-content-between align-items-start mb-3">
                                                         <div class="flex-grow-1">
-                                                            <h6 class="card-title mb-1">Plan ${index + 1}</h6>
+                                                            <h6 class="card-title mb-1 fw-bold">${plan.versionName}</h6>
                                                             <small class="text-muted">
-                                                                ${plan.activities.length} actividades
+                                                                ${plan.activities.length} actividades • 
+                                                                ${plan.usageCount} uso${plan.usageCount !== 1 ? 's' : ''}
                                                             </small>
                                                         </div>
                                                         <div class="text-end">
@@ -124,22 +144,27 @@
                                                             </span>
                                                         </div>
                                                         <div class="col-6">
-                                                            <small class="text-muted d-block">Actividades</small>
-                                                            <span class="fw-medium small">${plan.activities.length}</span>
+                                                            <small class="text-muted d-block">Popularidad</small>
+                                                            <span class="fw-medium small">
+                                                                ${plan.usageCount > 0 ? plan.usageCount + ' usos' : 'Sin uso'}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 
                                                 <div class="card-footer bg-transparent border-0 pt-0">
                                                     <div class="d-grid gap-2">
-                                                        <a href="/evaluation-plans/${plan._id}" class="btn btn-primary">
-                                                            <i class="bi bi-eye me-2"></i>Ver Detalle
-                                                        </a>
-                                                        ${plan.isApproved ? `
-                                                            <button onclick="useThisPlan('${plan._id}')" class="btn btn-outline-success">
-                                                                <i class="bi bi-calculator me-2"></i>Usar Para Cálculos
+                                                        <button onclick="useThisPlan('${plan._id}')" class="btn btn-primary">
+                                                            <i class="bi bi-calculator me-2"></i>Usar Esta Versión
+                                                        </button>
+                                                        <div class="d-flex gap-2">
+                                                            <a href="/evaluation-plans/${plan._id}" class="btn btn-outline-primary flex-fill">
+                                                                <i class="bi bi-eye me-1"></i>Ver
+                                                            </a>
+                                                            <button onclick="copyVersion('${plan._id}')" class="btn btn-outline-secondary flex-fill">
+                                                                <i class="bi bi-copy me-1"></i>Copiar
                                                             </button>
-                                                        ` : ''}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -247,6 +272,53 @@
 </div>
 <% } %>
 
+<!-- Modal para Crear Nueva Versión -->
+<div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createVersionModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Crear Nueva Versión
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createVersionForm">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Puedes crear tu propia versión del plan de evaluación con actividades y porcentajes personalizados.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="versionName" class="form-label">Nombre de la Versión *</label>
+                        <input type="text" class="form-control" id="versionName" 
+                               placeholder="Ej: Plan con los cambios de abril, Versión de Juan, etc."
+                               maxlength="100" required>
+                        <div class="form-text">Dale un nombre descriptivo para que otros puedan identificarla fácilmente.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="basePlan" class="form-label">Partir desde</label>
+                        <select class="form-select" id="basePlan">
+                            <option value="">Empezar desde cero</option>
+                            ${evaluationPlans.map(plan => `
+                                <option value="${plan._id}">${plan.versionName} (${plan.activities.length} actividades)</option>
+                            `).join('')}
+                        </select>
+                        <div class="form-text">Opcional: Selecciona un plan existente para copiar sus actividades como punto de partida.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>Crear Versión
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Scripts específicos para esta página -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -335,7 +407,58 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function useThisPlan(planId) {
-        window.location.href = `/evaluation-plans/${planId}`;
+        console.log('Usando plan:', planId);
+        
+        if (!planId) {
+            showToast('Error: ID de plan no válido', 'error');
+            return;
+        }
+        
+        // Incrementar contador de uso
+        fetch(`/api/evaluation-plans/${planId}/use`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(response => {
+            console.log('Respuesta de incremento de uso:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos de incremento:', data);
+        })
+        .catch(error => {
+            console.error('Error incrementando uso:', error);
+            // Continuar aunque falle el incremento
+        });
+        
+        // Redirigir a la calculadora
+        console.log('Redirigiendo a calculadora...');
+        window.location.href = `/evaluation-plans/${planId}/calculator`;
+    }
+    
+    function copyVersion(planId) {
+        console.log('Copiando versión:', planId);
+        // Obtener datos del plan a copiar
+        fetch(`/api/evaluation-plans/${planId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Respuesta del servidor:', data);
+                if (data.success) {
+                    // Prellenar el modal con datos del plan
+                    document.getElementById('versionName').value = `Copia de ${data.plan.versionName}`;
+                    document.getElementById('basePlan').value = planId;
+                    
+                    // Mostrar modal
+                    const modal = new bootstrap.Modal(document.getElementById('createVersionModal'));
+                    modal.show();
+                } else {
+                    showToast('Error al obtener datos del plan', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al copiar la versión', 'error');
+            });
     }
 
     // Función auxiliar para mostrar toasts
@@ -362,6 +485,79 @@ document.addEventListener('DOMContentLoaded', function() {
                 toastElement.remove();
             }
         }, 5000);
+    }
+    
+    // Función para mostrar modal cuando ya existe un plan
+    function showDuplicatePlanModal(message) {
+        const modalHtml = `
+            <div class="modal fade" id="duplicatePlanModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Plan Existente
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                ${message}
+                            </div>
+                            <p class="mb-3">
+                                <strong>¿Qué te gustaría hacer?</strong>
+                            </p>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-primary" onclick="viewExistingPlan()">
+                                    <i class="bi bi-eye me-2"></i>Ver Plan Existente
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-2"></i>Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remover modal anterior si existe
+        const existingModal = document.getElementById('duplicatePlanModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('duplicatePlanModal'));
+        modal.show();
+        
+        // Limpiar modal al cerrarse
+        document.getElementById('duplicatePlanModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+    
+    // Función para ver el plan existente
+    function viewExistingPlan() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('duplicatePlanModal'));
+        if (modal) modal.hide();
+        
+        // Buscar el primer plan en la página y hacer scroll hacia él
+        const firstPlan = document.querySelector('[href^="/evaluation-plans/"]');
+        if (firstPlan) {
+            firstPlan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Agregar efecto de resaltado temporal
+            const planCard = firstPlan.closest('.card');
+            if (planCard) {
+                planCard.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.5)';
+                planCard.style.transition = 'box-shadow 0.3s ease';
+                
+                setTimeout(() => {
+                    planCard.style.boxShadow = '';
+                }, 3000);
+            }
+        }
     }
 
     // Event Listeners
@@ -437,7 +633,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.reload();
                     }, 1500);
                 } else {
-                    showToast(result.message || 'Error al crear el plan', 'error');
+                    // Cerrar el modal de creación
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('createPlanModal'));
+                    if (modal) modal.hide();
+                    
+                    // Si es error de plan duplicado, mostrar modal especial
+                    if (response.status === 409) {
+                        showDuplicatePlanModal(result.message);
+                    } else {
+                        showToast(result.message || 'Error al crear el plan', 'error');
+                    }
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -446,8 +651,69 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Enviar formulario de nueva versión
+    const createVersionForm = document.getElementById('createVersionForm');
+    if (createVersionForm) {
+        createVersionForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const versionName = document.getElementById('versionName').value.trim();
+            const basePlanId = document.getElementById('basePlan').value;
+            
+            console.log('Creando versión:', { versionName, basePlanId });
+            
+            if (!versionName) {
+                showToast('El nombre de la versión es requerido', 'error');
+                return;
+            }
+            
+            try {
+                const pathParts = window.location.pathname.split('/');
+                const courseCode = pathParts[2];
+                const semester = pathParts[3];  
+                const groupNumber = pathParts[4];
+                
+                console.log('Datos del curso:', { courseCode, semester, groupNumber });
+                
+                const response = await fetch(`/courses/${courseCode}/${semester}/${groupNumber}/evaluation-plans/version`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        versionName,
+                        basePlanId: basePlanId || null
+                    })
+                });
+                
+                console.log('Respuesta del servidor:', response.status);
+                const result = await response.json();
+                console.log('Resultado:', result);
+                
+                if (result.success) {
+                    showToast('Versión creada exitosamente', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    showToast(result.message || 'Error al crear la versión', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al crear la versión', 'error');
+            }
+        });
+    }
+
     // Función global para usar planes
     window.useThisPlan = useThisPlan;
+    window.copyVersion = copyVersion;
+    
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
 });
 </script>
 

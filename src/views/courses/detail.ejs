@@ -1,0 +1,142 @@
+<%- include('../layouts/main', { 
+    body: `
+        <div class="container py-4">
+            <!-- Header súper simple -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <h2 class="fw-bold text-primary mb-2">
+                        <i class="bi bi-book me-2"></i>${course.name}
+                    </h2>
+                    <p class="text-muted">Detalles del curso</p>
+                </div>
+            </div>
+
+            <!-- Información del curso -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow">
+                        <div class="card-body p-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <i class="bi bi-hash text-primary me-2"></i>
+                                        <strong>Código:</strong> ${course.code}
+                                    </div>
+                                    <div class="mb-3">
+                                        <i class="bi bi-people text-success me-2"></i>
+                                        <strong>Grupo:</strong> ${course.groupNumber}
+                                    </div>
+                                    <div class="mb-3">
+                                        <i class="bi bi-calendar text-warning me-2"></i>
+                                        <strong>Semestre:</strong> ${course.semester}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <i class="bi bi-person text-info me-2"></i>
+                                        <strong>Profesor:</strong> ${course.professor ? `${course.professor.first_name} ${course.professor.last_name}` : 'No asignado'}
+                                    </div>
+                                    <div class="mb-3">
+                                        <i class="bi bi-geo-alt text-danger me-2"></i>
+                                        <strong>Sede:</strong> ${course.campus || 'No especificada'}
+                                    </div>
+                                    <div class="mb-3">
+                                        <i class="bi bi-building text-secondary me-2"></i>
+                                        <strong>Facultad:</strong> ${course.faculty || 'No especificada'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="row justify-content-center mb-4">
+                <div class="col-md-8">
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="/courses/${course.code}/${course.semester}/${course.groupNumber}/evaluation-plans" 
+                           class="btn btn-primary btn-lg">
+                            <i class="bi bi-clipboard-check me-2"></i>Ver Planes de Evaluación
+                        </a>
+                        <a href="/courses/search" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Volver a la búsqueda
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas del curso -->
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white text-center">
+                                <div class="card-body p-3">
+                                    <h4 class="mb-1">${course.stats?.totalPlans || 0}</h4>
+                                    <small>Planes Disponibles</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white text-center">
+                                <div class="card-body p-3">
+                                    <h4 class="mb-1">${course.stats?.studentsEnrolled || 0}</h4>
+                                    <small>Estudiantes</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white text-center">
+                                <div class="card-body p-3">
+                                    <h4 class="mb-1">${course.stats?.averageGrade || '--'}</h4>
+                                    <small>Promedio</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark text-center">
+                                <div class="card-body p-3">
+                                    <h4 class="mb-1">${course.stats?.totalComments || 0}</h4>
+                                    <small>Comentarios</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional si existe -->
+            ${course.description ? `
+                <div class="row justify-content-center mt-4">
+                    <div class="col-md-8">
+                        <div class="card bg-light border-0">
+                            <div class="card-body p-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>Descripción del Curso
+                                </h6>
+                                <p class="mb-0">${course.description}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+
+        <style>
+            .card {
+                transition: all 0.3s ease;
+            }
+            
+            .card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+            }
+            
+            .btn-lg {
+                padding: 0.8rem 2rem;
+                font-size: 1.1rem;
+            }
+        </style>
+    `
+}) %> 

@@ -21,6 +21,9 @@ class TrackademicApp {
         // Initialize animations
         this.initAnimations();
         
+        // Initialize global functions
+        this.setupGlobalFunctions();
+        
         console.log('Trackademic App initialized');
     }
 
@@ -387,6 +390,195 @@ class TrackademicApp {
             }
         });
     }
+
+    setupGlobalFunctions() {
+        // Función global para mostrar notificaciones
+        window.showToast = function(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            const toast = document.createElement('div');
+            
+            const typeClass = {
+                'success': 'text-bg-success',
+                'error': 'text-bg-danger',
+                'warning': 'text-bg-warning',
+                'info': 'text-bg-primary'
+            }[type] || 'text-bg-primary';
+            
+            toast.className = `toast ${typeClass}`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remover el toast después de que se cierre
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        };
+        
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
+        
+        // Función global para mostrar modal de planes
+        window.showMyPlansModal = async function() {
+            const modal = document.getElementById('myPlansModal');
+            if (!modal) {
+                console.error('Modal de planes no encontrado');
+                return;
+            }
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            const content = document.getElementById('myPlansModalContent');
+            
+            modalInstance.show();
+            
+            try {
+                content.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2">Cargando tus planes...</p>
+                    </div>
+                `;
+
+                const response = await fetch('/api/my-plans');
+                const data = await response.json();
+
+                if (data.success && data.plans.length > 0) {
+                    content.innerHTML = `
+                        <div class="row g-3">
+                            ${data.plans.map(plan => `
+                                <div class="col-md-6">
+                                    <div class="plan-card-modal">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <div class="plan-subject-modal">${plan.subjectCode}</div>
+                                                <div class="plan-meta-modal">
+                                                    ${plan.semester} - Grupo ${plan.groupNumber}
+                                                    <br>
+                                                    <small class="text-success">
+                                                        <i class="bi bi-check-circle me-1"></i>
+                                                        Guardado: ${new Date(plan.savedAt).toLocaleDateString('es-ES')}
+                                                    </small>
+                                                </div>
+                                                <div class="mt-2">
+                                                    <small class="text-muted">
+                                                        Nota actual: <span class="fw-bold text-primary">${plan.currentGrade ? plan.currentGrade.toFixed(1) : '0.0'}</span>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column gap-1">
+                                                <a href="/evaluation-plans/${plan._id}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i> Ver
+                                                </a>
+                                                <a href="/evaluation-plans/${plan._id}/calculator" class="btn btn-sm btn-success">
+                                                    <i class="bi bi-calculator"></i> Calcular
+                                                </a>
+                                                <button onclick="removePlanFromModal('${plan._id}')" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    
+                    // Actualizar contador en navbar
+                    updateMyPlansCount();
+                } else {
+                    content.innerHTML = `
+                        <div class="text-center py-5">
+                            <i class="bi bi-bookmark text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 text-muted">No tienes planes guardados</h5>
+                            <p class="text-muted">Busca y guarda planes de evaluación para acceder rápidamente a ellos.</p>
+                            <button class="btn btn-primary" onclick="window.location.href='/courses/search'">
+                                <i class="bi bi-search me-2"></i>
+                                Explorar Cursos
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading plans:', error);
+                content.innerHTML = `
+                    <div class="text-center text-danger py-4">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 2rem;"></i>
+                        <p class="mt-2">Error al cargar los planes</p>
+                        <button class="btn btn-outline-primary" onclick="showMyPlansModal()">Reintentar</button>
+                    </div>
+                `;
+            }
+        };
+        
+        // Función para remover plan desde el modal
+        window.removePlanFromModal = async function(planId) {
+            if (!confirm('¿Estás seguro de que quieres remover este plan de tus guardados?')) return;
+            
+            try {
+                const response = await fetch(`/api/my-plans/${planId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast('Plan removido exitosamente', 'success');
+                    showMyPlansModal(); // Recargar el modal
+                } else {
+                    showToast('Error al remover el plan', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing plan:', error);
+                showToast('Error al remover el plan', 'error');
+            }
+        };
+        
+        // Función para actualizar contador de planes
+        window.updateMyPlansCount = async function() {
+            try {
+                const response = await fetch('/api/my-plans');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const countElement = document.getElementById('myPlansCount');
+                    if (countElement) {
+                        if (data.plans.length > 0) {
+                            countElement.textContent = data.plans.length;
+                            countElement.style.display = 'inline';
+                        } else {
+                            countElement.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('No se pudo actualizar el contador de planes');
+            }
+        };
+        
+        // Inicializar contador al cargar la página
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', updateMyPlansCount);
+        } else {
+            updateMyPlansCount();
+        }
+    }
 }
 
 // Initialize app when DOM is loaded
@@ -439,5 +631,71 @@ window.TrackademicUtils = {
     calculateRequiredGrade,
     refreshPage,
     goBack,
-    confirmAction
-}; 
+    confirmAction,
+    refreshDashboardPlans
+};
+
+// Función para actualizar la sección de planes en el dashboard
+async function refreshDashboardPlans() {
+    const plansContainer = document.getElementById('plansContainer');
+    const emptyState = document.getElementById('emptyState');
+    
+    // Solo actualizar si estamos en el dashboard y los elementos existen
+    if (!plansContainer || !emptyState) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/my-plans');
+        const data = await response.json();
+        
+        if (data.success && data.plans.length > 0) {
+            // Ocultar estado vacío y mostrar planes
+            emptyState.style.display = 'none';
+            plansContainer.style.display = 'block';
+            
+            plansContainer.innerHTML = `
+                <div class="row g-3">
+                    ${data.plans.slice(0, 4).map(plan => `
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="card-title text-primary mb-0">${plan.subjectCode}</h6>
+                                        <span class="badge bg-success">Guardado</span>
+                                    </div>
+                                    <p class="card-text small text-muted">
+                                        ${plan.semester} - Grupo ${plan.groupNumber}
+                                        <br>
+                                        <small>Nota actual: <strong>${plan.currentGrade.toFixed(1)}</strong></small>
+                                    </p>
+                                    <div class="d-flex gap-1">
+                                        <a href="/evaluation-plans/${plan._id}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> Ver
+                                        </a>
+                                        <a href="/evaluation-plans/${plan._id}/calculator" class="btn btn-sm btn-success">
+                                            <i class="bi bi-calculator"></i> Calcular
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                ${data.plans.length > 4 ? `
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-primary" onclick="showMyPlansModal()">
+                            Ver todos los planes (${data.plans.length})
+                        </button>
+                    </div>
+                ` : ''}
+            `;
+        } else {
+            // Mostrar estado vacío si no hay planes
+            emptyState.style.display = 'block';
+            plansContainer.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error refreshing dashboard plans:', error);
+    }
+} 
