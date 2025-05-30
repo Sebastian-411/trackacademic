@@ -487,9 +487,6 @@ class TrackademicApp {
                                                 <a href="/evaluation-plans/${plan._id}" class="btn btn-sm btn-outline-primary">
                                                     <i class="bi bi-eye"></i> Ver
                                                 </a>
-                                                <a href="/evaluation-plans/${plan._id}/calculator" class="btn btn-sm btn-success">
-                                                    <i class="bi bi-calculator"></i> Calcular
-                                                </a>
                                                 <button onclick="removePlanFromModal('${plan._id}')" class="btn btn-sm btn-outline-danger">
                                                     <i class="bi bi-trash"></i>
                                                 </button>

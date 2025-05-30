@@ -79,6 +79,26 @@
                             <span class="badge bg-primary">${plan.activities.length} actividades</span>
                         </div>
                         <div class="card-body">
+                            <!-- Estado Visual de la Materia -->
+                            <div id="subjectStatus" class="alert alert-info mb-4" style="display: none;">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h6 class="alert-heading mb-1">
+                                            <i id="statusIcon" class="bi bi-info-circle me-2"></i>
+                                            <span id="statusTitle">Estado de la Materia</span>
+                                        </h6>
+                                        <p id="statusMessage" class="mb-0"></p>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div id="statusGrade" class="h3 mb-0 fw-bold"></div>
+                                        <small class="text-muted">Nota Actual</small>
+                                    </div>
+                                </div>
+                                <div class="progress mt-2" style="height: 8px;">
+                                    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead class="table-light">
@@ -159,7 +179,7 @@
                                 </select>
                             </div>
                             
-                            <button onclick="calculateMinimumGrades()" class="btn btn-primary w-100 mb-3">
+                            <button id="calculateBtn" class="btn btn-primary w-100 mb-3">
                                 <i class="bi bi-calculator me-2"></i>Calcular Notas Mínimas
                             </button>
                             
@@ -170,25 +190,6 @@
                                 <div id="minimumGradesTable"></div>
                             </div>
                             
-                            <div class="mt-3">
-                                <h6 class="mb-2">Estadísticas del Plan</h6>
-                                <div class="small">
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span>Total Actividades:</span>
-                                        <span class="fw-medium">${plan.activities.length}</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-1">
-                                        <span>Porcentaje Total:</span>
-                                        <span class="fw-medium">100%</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span>Estado:</span>
-                                        <span class="fw-medium ${plan.isApproved ? 'text-success' : 'text-warning'}">
-                                            ${plan.isApproved ? 'Aprobado' : 'Pendiente'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -253,59 +254,67 @@
         </div>
 
         <script>
-            const planActivities = ${JSON.stringify(plan.activities)};
-
-            function updateCalculations() {
-                let totalContribution = 0;
+            // Debugging - verificar si el script se está cargando
+            console.log('Script iniciado');
+            
+            // Función global para la calculadora de notas mínimas
+            window.calculateMinimumGrades = function() {
+                console.log('calculateMinimumGrades ejecutada');
                 
-                planActivities.forEach((activity, index) => {
-                    const gradeInput = document.querySelector(\`input[data-activity-index="\${index}"]\`);
-                    const contributionSpan = document.querySelector(\`span[data-activity-index="\${index}"]\`);
-                    
-                    const grade = parseFloat(gradeInput.value) || 0;
-                    const contribution = (grade * activity.percentage) / 100;
-                    
-                    contributionSpan.textContent = contribution.toFixed(2);
-                    totalContribution += contribution;
-                });
-                
-                const currentGradeElement = document.getElementById('currentGrade');
-                currentGradeElement.textContent = totalContribution.toFixed(2);
-                
-                // Cambiar color según la nota
-                if (totalContribution >= 4.5) {
-                    currentGradeElement.className = 'fw-bold text-success';
-                } else if (totalContribution >= 3.0) {
-                    currentGradeElement.className = 'fw-bold text-primary';
-                } else {
-                    currentGradeElement.className = 'fw-bold text-danger';
-                }
-            }
-
-            function calculateMinimumGrades() {
                 const targetGrade = parseFloat(document.getElementById('targetGrade').value);
                 const resultsDiv = document.getElementById('calculationResults');
                 const tableDiv = document.getElementById('minimumGradesTable');
                 
+                // Obtener datos del servidor
+                const serverData = JSON.parse(document.getElementById('serverData').textContent);
+                const planActivities = serverData.planActivities;
+                
                 // Obtener notas ya ingresadas
                 let currentContribution = 0;
                 let remainingPercentage = 0;
+                let completedActivities = 0;
                 const pendingActivities = [];
                 
                 planActivities.forEach((activity, index) => {
-                    const gradeInput = document.querySelector(\`input[data-activity-index="\${index}"]\`);
+                    const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
                     const grade = parseFloat(gradeInput.value);
                     
                     if (grade && grade > 0) {
                         currentContribution += (grade * activity.percentage) / 100;
+                        completedActivities++;
                     } else {
                         remainingPercentage += activity.percentage;
                         pendingActivities.push({ ...activity, index });
                     }
                 });
                 
+                // Cambiar el estilo del alert según el resultado
+                resultsDiv.className = 'alert mb-3';
+                
                 if (pendingActivities.length === 0) {
-                    tableDiv.innerHTML = '<p class="mb-0">Todas las actividades ya tienen nota asignada.</p>';
+                    // Todas las actividades completadas
+                    resultsDiv.className += ' alert-info';
+                    var statusClass = currentContribution >= 3.0 ? 'text-success' : 'text-danger';
+                    var statusMessage = '';
+                    if (currentContribution >= 3.0) {
+                        if (currentContribution >= 4.5) {
+                            statusMessage = '🏆 ¡Excelente! Has aprobado con nota sobresaliente.';
+                        } else if (currentContribution >= 4.0) {
+                            statusMessage = '🎯 ¡Muy bien! Has aprobado con muy buena nota.';
+                        } else {
+                            statusMessage = '✅ ¡Aprobado! Has pasado la materia.';
+                        }
+                    } else {
+                        statusMessage = '❌ Has reprobado la materia. Contacta al profesor.';
+                    }
+                    
+                    tableDiv.innerHTML = 
+                        '<div class="text-center py-3">' +
+                            '<i class="bi bi-check-all text-success mb-2" style="font-size: 2rem;"></i>' +
+                            '<h6 class="text-success">¡Todas las actividades completadas!</h6>' +
+                            '<p class="mb-2">Tu nota final es: <strong class="h5 text-primary">' + currentContribution.toFixed(2) + '</strong></p>' +
+                            '<p class="mb-0 ' + statusClass + '">' + statusMessage + '</p>' +
+                        '</div>';
                     resultsDiv.style.display = 'block';
                     return;
                 }
@@ -313,82 +322,318 @@
                 const neededContribution = targetGrade - currentContribution;
                 const requiredAverage = (neededContribution * 100) / remainingPercentage;
                 
-                let tableHTML = '<div class="table-responsive"><table class="table table-sm">';
-                tableHTML += '<thead><tr><th>Actividad</th><th class="text-center">% Peso</th><th class="text-center">Nota Mínima</th></tr></thead><tbody>';
+                var tableHTML = '';
                 
-                if (requiredAverage <= 5.0) {
-                    pendingActivities.forEach(activity => {
+                if (requiredAverage <= 0) {
+                    // Ya alcanzó la nota objetivo
+                    resultsDiv.className += ' alert-success';
+                    tableHTML = 
+                        '<div class="text-center py-3">' +
+                            '<i class="bi bi-check-circle-fill text-success mb-2" style="font-size: 2rem;"></i>' +
+                            '<h6 class="text-success">¡Ya alcanzaste la nota objetivo!</h6>' +
+                            '<p class="mb-2">Nota actual: <strong class="h5 text-success">' + currentContribution.toFixed(2) + '</strong></p>' +
+                            '<p class="mb-0">Las actividades restantes solo pueden mejorar tu promedio. ¡Sigue así!</p>' +
+                        '</div>';
+                } else if (requiredAverage <= 5.0) {
+                    // Nota objetivo alcanzable
+                    var alertClass = '';
+                    var textClass = '';
+                    var difficultyText = '';
+                    
+                    if (requiredAverage <= 3.0) {
+                        alertClass = ' alert-success';
+                        textClass = 'text-success';
+                        difficultyText = '🎯 ¡Fácil de lograr!';
+                    } else if (requiredAverage <= 4.0) {
+                        alertClass = ' alert-warning';
+                        textClass = 'text-warning';
+                        difficultyText = '⚠️ Requiere esfuerzo';
+                    } else {
+                        alertClass = ' alert-info';
+                        textClass = 'text-info';
+                        difficultyText = '🚀 ¡Desafío aceptado!';
+                    }
+                    
+                    resultsDiv.className += alertClass;
+                    
+                    tableHTML = 
+                        '<div class="mb-3 text-center">' +
+                            '<h6 class="' + textClass + '">' + difficultyText + '</h6>' +
+                            '<p class="mb-0">Promedio requerido en actividades restantes: ' +
+                                '<strong class="h5 ' + textClass + '">' + requiredAverage.toFixed(2) + '</strong>' +
+                            '</p>' +
+                        '</div>' +
+                        '<div class="table-responsive">' +
+                            '<table class="table table-sm">' +
+                                '<thead>' +
+                                    '<tr>' +
+                                        '<th>Actividad</th>' +
+                                        '<th class="text-center">% Peso</th>' +
+                                        '<th class="text-center">Nota Mínima</th>' +
+                                        '<th class="text-center">Dificultad</th>' +
+                                    '</tr>' +
+                                '</thead>' +
+                                '<tbody>';
+                    
+                    pendingActivities.forEach(function(activity) {
                         const minGrade = Math.max(0, requiredAverage);
-                        const status = minGrade <= 5.0 ? 'text-success' : 'text-danger';
+                        var difficulty = '';
+                        var statusClass = '';
+                        var icon = '';
                         
-                        tableHTML += \`
-                            <tr>
-                                <td>\${activity.name}</td>
-                                <td class="text-center">\${activity.percentage}%</td>
-                                <td class="text-center \${status}">\${minGrade.toFixed(2)}</td>
-                            </tr>
-                        \`;
+                        if (minGrade <= 3.0) {
+                            difficulty = 'Fácil';
+                            statusClass = 'text-success';
+                            icon = '😊';
+                        } else if (minGrade <= 4.0) {
+                            difficulty = 'Moderado';
+                            statusClass = 'text-warning';
+                            icon = '😐';
+                        } else if (minGrade <= 4.5) {
+                            difficulty = 'Difícil';
+                            statusClass = 'text-danger';
+                            icon = '😰';
+                        } else {
+                            difficulty = 'Muy Difícil';
+                            statusClass = 'text-danger';
+                            icon = '😰';
+                        }
+                        
+                        tableHTML += 
+                            '<tr>' +
+                                '<td>' + activity.name + '</td>' +
+                                '<td class="text-center">' + activity.percentage + '%</td>' +
+                                '<td class="text-center ' + statusClass + '"><strong>' + minGrade.toFixed(2) + '</strong></td>' +
+                                '<td class="text-center ' + statusClass + '">' + icon + ' ' + difficulty + '</td>' +
+                            '</tr>';
                     });
                     
                     tableHTML += '</tbody></table></div>';
-                    tableHTML += \`<div class="mt-2"><strong>Promedio requerido: <span class="text-primary">\${requiredAverage.toFixed(2)}</span></strong></div>\`;
                     
-                    if (requiredAverage > 5.0) {
-                        tableHTML += '<div class="text-danger mt-2"><i class="bi bi-exclamation-triangle me-1"></i>La nota objetivo no es alcanzable con las notas actuales.</div>';
-                    } else if (requiredAverage <= 0) {
-                        tableHTML += '<div class="text-success mt-2"><i class="bi bi-check-circle me-1"></i>Ya has alcanzado la nota objetivo.</div>';
+                    if (requiredAverage > 4.5) {
+                        tableHTML += '<div class="mt-2 text-center"><small class="text-muted">💡 Tip: Considera hablar con el profesor sobre oportunidades adicionales.</small></div>';
                     }
                 } else {
-                    tableHTML += '</tbody></table></div>';
-                    tableHTML += '<div class="text-danger"><i class="bi bi-x-circle me-1"></i>La nota objetivo no es alcanzable. Necesitarías un promedio de ' + requiredAverage.toFixed(2) + ' en las actividades restantes.</div>';
+                    // Nota objetivo NO alcanzable
+                    resultsDiv.className += ' alert-danger';
+                    tableHTML = 
+                        '<div class="text-center py-3">' +
+                            '<i class="bi bi-x-circle-fill text-danger mb-2" style="font-size: 2rem;"></i>' +
+                            '<h6 class="text-danger">❌ Nota objetivo no alcanzable</h6>' +
+                            '<p class="mb-2">Necesitarías un promedio de <strong class="text-danger">' + requiredAverage.toFixed(2) + '</strong> en las actividades restantes.</p>' +
+                            '<div class="bg-light p-3 rounded">' +
+                                '<h6 class="mb-2">💡 Opciones alternativas:</h6>' +
+                                '<ul class="list-unstyled mb-0 text-start">' +
+                                    '<li>• Hablar con el profesor sobre recuperaciones</li>' +
+                                    '<li>• Verificar si hay actividades extra</li>' +
+                                    '<li>• Considerar diferentes metas de calificación</li>' +
+                                '</ul>' +
+                            '</div>' +
+                        '</div>';
                 }
                 
                 tableDiv.innerHTML = tableHTML;
                 resultsDiv.style.display = 'block';
-            }
+            };
+            
+            // Verificar que la función esté disponible
+            console.log('Función asignada:', typeof window.calculateMinimumGrades);
+        </script>
 
-            // Event Listeners
-            document.addEventListener('DOMContentLoaded', function() {
-                // Actualizar cálculos cuando cambian las notas
-                document.addEventListener('input', function(e) {
-                    if (e.target.classList.contains('grade-input')) {
-                        updateCalculations();
+        <!-- Script con datos del servidor -->
+        <script id="serverData" type="application/json">
+            {
+                "planActivities": ${JSON.stringify(plan.activities)},
+                "planId": "${plan._id}"
+            }
+        </script>
+
+        <script>
+            console.log('Script principal iniciado');
+            
+            // Obtener datos del servidor
+            try {
+                const serverData = JSON.parse(document.getElementById('serverData').textContent);
+                const planActivities = serverData.planActivities;
+                const planId = serverData.planId;
+                
+                console.log('Datos del servidor:', { planActivities, planId });
+
+                function updateCalculations() {
+                    let totalContribution = 0;
+                    let completedActivities = 0;
+                    let totalActivities = planActivities.length;
+                    
+                    planActivities.forEach((activity, index) => {
+                        const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
+                        const contributionSpan = document.querySelector('span[data-activity-index="' + index + '"]');
+                        
+                        const grade = parseFloat(gradeInput.value) || 0;
+                        const contribution = (grade * activity.percentage) / 100;
+                        
+                        contributionSpan.textContent = contribution.toFixed(2);
+                        totalContribution += contribution;
+                        
+                        // Contar actividades completadas
+                        if (grade > 0) {
+                            completedActivities++;
+                        }
+                    });
+                    
+                    // Actualizar nota actual
+                    const currentGradeElement = document.getElementById('currentGrade');
+                    currentGradeElement.textContent = totalContribution.toFixed(2);
+                    
+                    // Cambiar color según la nota
+                    if (totalContribution >= 4.5) {
+                        currentGradeElement.className = 'fw-bold text-success';
+                    } else if (totalContribution >= 3.0) {
+                        currentGradeElement.className = 'fw-bold text-primary';
+                    } else {
+                        currentGradeElement.className = 'fw-bold text-danger';
                     }
+                    
+                    // Actualizar feedback visual
+                    updateSubjectStatus(totalContribution, completedActivities, totalActivities);
+                }
+
+                function updateSubjectStatus(currentGrade, completedActivities, totalActivities) {
+                    const statusDiv = document.getElementById('subjectStatus');
+                    const statusIcon = document.getElementById('statusIcon');
+                    const statusTitle = document.getElementById('statusTitle');
+                    const statusMessage = document.getElementById('statusMessage');
+                    const statusGradeElement = document.getElementById('statusGrade');
+                    const progressBar = document.getElementById('progressBar');
+                    
+                    // Mostrar el estado
+                    statusDiv.style.display = 'block';
+                    statusGradeElement.textContent = currentGrade.toFixed(2);
+                    
+                    // Calcular progreso
+                    const progress = (completedActivities / totalActivities) * 100;
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = Math.round(progress) + '%';
+                    
+                    // Determinar estado y colores
+                    if (completedActivities === totalActivities) {
+                        // Todas las actividades completadas
+                        if (currentGrade >= 3.0) {
+                            // PASÓ LA MATERIA
+                            statusDiv.className = 'alert alert-success mb-4';
+                            statusIcon.className = 'bi bi-check-circle-fill me-2';
+                            progressBar.className = 'progress-bar bg-success';
+                            
+                            if (currentGrade >= 4.5) {
+                                statusTitle.textContent = '🏆 ¡EXCELENTE!';
+                                statusMessage.textContent = 'Has completado la materia con nota sobresaliente. ¡Felicitaciones!';
+                            } else if (currentGrade >= 4.0) {
+                                statusTitle.textContent = '🎯 ¡MUY BIEN!';
+                                statusMessage.textContent = 'Has aprobado la materia con muy buena nota. ¡Buen trabajo!';
+                            } else {
+                                statusTitle.textContent = '✅ ¡APROBADO!';
+                                statusMessage.textContent = 'Has aprobado la materia. ¡Felicitaciones por completar todas las actividades!';
+                            }
+                        } else {
+                            // REPROBÓ LA MATERIA
+                            statusDiv.className = 'alert alert-danger mb-4';
+                            statusIcon.className = 'bi bi-x-circle-fill me-2';
+                            statusTitle.textContent = '❌ REPROBADO';
+                            statusMessage.textContent = 'Has completado todas las actividades pero la nota final está por debajo de 3.0. Considera hablar con el profesor.';
+                            progressBar.className = 'progress-bar bg-danger';
+                        }
+                    } else {
+                        // Actividades pendientes
+                        const remaining = totalActivities - completedActivities;
+                        const neededForPass = Math.max(0, 3.0 - currentGrade);
+                        
+                        if (currentGrade >= 3.0) {
+                            // YA PASÓ CON LAS NOTAS ACTUALES
+                            statusDiv.className = 'alert alert-success mb-4';
+                            statusIcon.className = 'bi bi-check-circle me-2';
+                            statusTitle.textContent = '🎉 ¡YA APROBASTE!';
+                            statusMessage.textContent = 'Con las notas actuales ya tienes la materia aprobada. Las actividades restantes pueden mejorar tu promedio.';
+                            progressBar.className = 'progress-bar bg-success';
+                        } else if (neededForPass <= 2.5) {
+                            // CERCA DE PASAR
+                            statusDiv.className = 'alert alert-warning mb-4';
+                            statusIcon.className = 'bi bi-exclamation-triangle me-2';
+                            statusTitle.textContent = '⚠️ CERCA DE APROBAR';
+                            statusMessage.textContent = 'Te faltan ' + neededForPass.toFixed(2) + ' puntos para aprobar. Tienes ' + remaining + ' actividad(es) pendiente(s). ¡Sigue esforzándote!';
+                            progressBar.className = 'progress-bar bg-warning';
+                        } else {
+                            // LEJOS DE PASAR
+                            statusDiv.className = 'alert alert-danger mb-4';
+                            statusIcon.className = 'bi bi-exclamation-triangle-fill me-2';
+                            statusTitle.textContent = '🚨 RIESGO DE REPROBAR';
+                            statusMessage.textContent = 'Necesitas ' + neededForPass.toFixed(2) + ' puntos más para aprobar. Tienes ' + remaining + ' actividad(es) pendiente(s). ¡Necesitas esforzarte más!';
+                            progressBar.className = 'progress-bar bg-danger';
+                        }
+                    }
+                }
+
+                // Event Listeners
+                document.addEventListener('DOMContentLoaded', function() {
+                    console.log('DOM cargado');
+                    
+                    // Event listener para el botón de calcular
+                    const calculateBtn = document.getElementById('calculateBtn');
+                    if (calculateBtn) {
+                        calculateBtn.addEventListener('click', function() {
+                            console.log('Botón calcular clickeado');
+                            calculateMinimumGrades();
+                        });
+                    }
+                    
+                    // Actualizar cálculos cuando cambian las notas
+                    document.addEventListener('input', function(e) {
+                        if (e.target.classList.contains('grade-input')) {
+                            updateCalculations();
+                        }
+                    });
+                    
+                    // Envío de comentarios
+                    document.getElementById('commentForm').addEventListener('submit', async function(e) {
+                        e.preventDefault();
+                        
+                        const content = document.getElementById('commentContent').value.trim();
+                        if (!content) return;
+                        
+                        try {
+                            const response = await fetch('/evaluation-plans/' + planId + '/comments', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ content })
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                if (typeof showToast === 'function') {
+                                    showToast('Comentario agregado exitosamente', 'success');
+                                }
+                                // Recargar la página para mostrar el nuevo comentario
+                                setTimeout(() => {
+                                    window.location.reload();
+                                }, 1000);
+                            } else {
+                                if (typeof showToast === 'function') {
+                                    showToast(result.message || 'Error al agregar comentario', 'error');
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error:', error);
+                            if (typeof showToast === 'function') {
+                                showToast('Error al enviar el comentario', 'error');
+                            }
+                        }
+                    });
                 });
                 
-                // Envío de comentarios
-                document.getElementById('commentForm').addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    const content = document.getElementById('commentContent').value.trim();
-                    if (!content) return;
-                    
-                    try {
-                        const response = await fetch(\`/evaluation-plans/${plan._id}/comments\`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ content })
-                        });
-                        
-                        const result = await response.json();
-                        
-                        if (result.success) {
-                            showToast('Comentario agregado exitosamente', 'success');
-                            // Recargar la página para mostrar el nuevo comentario
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1000);
-                        } else {
-                            showToast(result.message || 'Error al agregar comentario', 'error');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        showToast('Error al enviar el comentario', 'error');
-                    }
-                });
-            });
+            } catch (error) {
+                console.error('Error en el script principal:', error);
+            }
         </script>
     `
 }) %> 
