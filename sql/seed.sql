@@ -54,15 +54,15 @@ INSERT INTO EMPLOYEES (id, first_name, last_name, email, contract_type, employee
 ('1003', 'Carlos', 'López', 'carlos.lopez@univcali.edu.co', 'Cátedra', 'Docente', NULL, 1, 103),
 ('1004', 'Carlos', 'Mejía', 'carlos.mejia@univcali.edu.co', 'Planta', 'Docente', NULL, 3, 103),
 ('1005', 'Sandra', 'Ortiz', 'sandra.ortiz@univcali.edu.co', 'Cátedra', 'Docente', NULL, 4, 104),
-('1006', 'Julián', 'Reyes', 'julian.reyes@univcali.edu.co', 'Planta', 'Administrativo', NULL, 1, 105);
+('1006', 'Julián', 'Reyes', 'julian.reyes@univcali.edu.co', 'Planta', 'Administrativo', NULL, 1, 105),
 ('1007', 'Ana', 'Torres', 'ana.torres@univcali.edu.co', 'Cátedra', 'Docente', NULL, 2, 102),
 ('1008', 'Luis', 'Ramírez', 'luis.ramirez@univcali.edu.co', 'Planta', 'Administrativo', NULL, 3, 103),
 ('1009', 'Laura', 'Hernández', 'laura.hernandez@univcali.edu.co', 'Cátedra', 'Docente', NULL, 4, 104),
-('1010', 'Andrés', 'Castro', 'andres.castro@univcali.edu.co', 'Planta', 'Docente', NULL, 1, 101);
+('1010', 'Andrés', 'Castro', 'andres.castro@univcali.edu.co', 'Planta', 'Docente', NULL, 1, 101),
 ('1011', 'Patricia', 'Vargas', 'patricia.vargas@univcali.edu.co', 'Cátedra', 'Docente', NULL, 2, 102),
 ('1012', 'Sofía', 'García', 'sofia.garcia@univcali.edu.co', 'Planta', 'Administrativo', NULL, 3, 103),
 ('1013', 'Diego', 'Martínez', 'diego.martinez@univcali.edu.co', 'Cátedra', 'Docente', NULL, 4, 104),
-('1014', 'Camila', 'Rojas', 'camilo.rojas@univcali.edu.co', 'Planta', 'Docente', NULL, 1, 101);
+('1014', 'Camila', 'Rojas', 'camilo.rojas@univcali.edu.co', 'Planta', 'Docente', NULL, 1, 101),
 ('1015', 'Felipe', 'Córdoba', 'felipe.cordoba@univcali.edu.co', 'Cátedra', 'Docente', NULL, 2, 102),
 ('1016', 'Valentina', 'Pineda', 'valentina.pineda@univaceli.edu.co', 'Planta', 'Administrativo', NULL, 3, 103),
 ('1017', 'Mateo', 'Sánchez', 'mateo.sanchez@univcali.edu.co', 'Cátedra', 'Docente', NULL, 4, 104),
@@ -80,8 +80,8 @@ INSERT INTO FACULTIES (code, name, location, phone_number, dean_id) VALUES
 (4, 'Facultad de Ciencias Humanas', 'Cali', '555-3456', '1019');
 
 -- Actualizar faculty_code en EMPLOYEES
-UPDATE EMPLOYEES SET faculty_code = 1 WHERE id IN ('1001', '1002', '1003', '1004'),
-UPDATE EMPLOYEES SET faculty_code = 2 WHERE id IN ('1005', '1006', '1007', '1008', '1009'),
+UPDATE EMPLOYEES SET faculty_code = 1 WHERE id IN ('1001', '1002', '1003', '1004');
+UPDATE EMPLOYEES SET faculty_code = 2 WHERE id IN ('1005', '1006', '1007', '1008', '1009');
 UPDATE EMPLOYEES SET faculty_code = 3 WHERE id IN ('1010', '1011', '1012', '1013', '1014', '1015', '1016', '1017', '1018');
 UPDATE EMPLOYEES SET faculty_code = 4 WHERE id IN ('1019', '1020', '1021', '1022');
 
@@ -91,17 +91,17 @@ INSERT INTO AREAS (code, name, faculty_code, coordinator_id) VALUES
 (2, 'Área de Ciencia Clínicas', 1, '1003'),
 (3, 'Área de Salud Pública y Medicina Comunitaria', 1, '1004'),
 (4, 'Área de Gestión Organizacional', 2, '1006'),
-(5, 'Área de Mercadeo, Emprendimiento e Internacionalización', 2, '1007');
+(5, 'Área de Mercadeo, Emprendimiento e Internacionalización', 2, '1007'),
 (6, 'Área de Estudios Contables y Financieros', 2, '1008'),
 (7, 'Área de Economía', 2, '1009'),
 (8, 'Área de Diseño e Innovación', 3, '1011'),
 (9, 'Área de Ciencias Físicas y Exactas', 3, '1012'),
 (10, 'Área de Ciencias Farmacéuticas y Químicas', 3, '1013'),
 (11, 'Área de Ciencias Biológicas, Bioprocesos y Biotecnología', 3, '1014'),
-(12, 'Área de Ciencias Aplicadas e Industria Sostenible', 3, '1015');
+(12, 'Área de Ciencias Aplicadas e Industria Sostenible', 3, '1015'),
 (13, 'Área de Tecnología, Diseño e Innovación', 3, '1016'),
-(14, 'Área de Computación y Sistemas Inteligentes', 3, '1017');
-(15, 'Área de Ingeniería Industrial y Sostenibilidad', 3, '1018');
+(14, 'Área de Computación y Sistemas Inteligentes', 3, '1017'),
+(15, 'Área de Ingeniería Industrial y Sostenibilidad', 3, '1018'),
 (16, 'Área de Música', 4, '1019'),
 (17, 'Área de Lenguaje', 4, '1020'),
 (18, 'Área de Idiomas y Culturas del Mundo', 4, '1021'),
@@ -326,7 +326,7 @@ INSERT INTO GROUPS (number, semester, subject_code, professor_id) VALUES
 (1, '2023-2', 'S259', '1022'),
 (2, '2023-2', 'S259', '1022'),
 (1, '2023-2', 'S260', '1022'),
-(2, '2023-2', 'S260', '1022');
+(2, '2023-2', 'S260', '1022'),
 (1, '2023-2', 'S261', '1022'),
 (2, '2023-2', 'S261', '1022'),
 (1, '2023-2', 'S262', '1022'),

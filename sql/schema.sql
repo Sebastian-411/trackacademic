@@ -1,6 +1,6 @@
 CREATE TABLE AREAS (
     code              INTEGER NOT NULL,
-    name              VARCHAR(50) NOT NULL,
+    name              VARCHAR(80) NOT NULL,
     faculty_code      INTEGER NOT NULL,
     coordinator_id    VARCHAR(15) NOT NULL
 );
@@ -11,7 +11,7 @@ ALTER TABLE AREAS ADD CONSTRAINT AREAS_PK PRIMARY KEY (code);
 
 CREATE TABLE SUBJECTS (
     code            VARCHAR(10) NOT NULL,
-    name            VARCHAR(30) NOT NULL,
+    name            VARCHAR(50) NOT NULL,
     program_code    INTEGER NOT NULL
 );
 
@@ -35,11 +35,11 @@ ALTER TABLE DEPARTMENTS ADD CONSTRAINT DEPARTMENTS_PK PRIMARY KEY (code);
 
 CREATE TABLE EMPLOYEES (
     id                  VARCHAR(15) NOT NULL,
-    first_name          VARCHAR(30) NOT NULL,
-    last_name           VARCHAR(30) NOT NULL,
-    email               VARCHAR(30) NOT NULL,
-    contract_type       VARCHAR(30) NOT NULL,
-    employee_type       VARCHAR(30) NOT NULL,
+    first_name          VARCHAR(50) NOT NULL,
+    last_name           VARCHAR(50) NOT NULL,
+    email               VARCHAR(50) NOT NULL,
+    contract_type       VARCHAR(50) NOT NULL,
+    employee_type       VARCHAR(50) NOT NULL,
     faculty_code        INTEGER NOT NULL,
     campus_code         INTEGER NOT NULL,
     birth_place_code    INTEGER NOT NULL
@@ -49,7 +49,7 @@ ALTER TABLE EMPLOYEES ADD CONSTRAINT EMPLOYEES_PK PRIMARY KEY (id);
 
 CREATE TABLE FACULTIES (
     code         INTEGER NOT NULL,
-    name         VARCHAR(50) NOT NULL,
+    name         VARCHAR(80) NOT NULL,
     location     VARCHAR(15) NOT NULL,
     phone_number VARCHAR(15) NOT NULL,
     dean_id      VARCHAR(15)
@@ -92,13 +92,13 @@ CREATE TABLE CAMPUSES (
 ALTER TABLE CAMPUSES ADD CONSTRAINT CAMPUSES_PK PRIMARY KEY (code);
 
 CREATE TABLE CONTRACT_TYPES (
-    name VARCHAR(30) NOT NULL
+    name VARCHAR(50) NOT NULL
 );
 
 ALTER TABLE CONTRACT_TYPES ADD CONSTRAINT CONTRACT_TYPES_PK PRIMARY KEY (name);
 
 CREATE TABLE EMPLOYEE_TYPES (
-    name VARCHAR(30) NOT NULL
+    name VARCHAR(50) NOT NULL
 );
 
 ALTER TABLE EMPLOYEE_TYPES ADD CONSTRAINT EMPLOYEE_TYPES_PK PRIMARY KEY (name);
