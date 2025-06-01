@@ -11,13 +11,18 @@
                             </h2>
                             <p class="text-muted mb-0">${plan.subjectCode} - ${plan.subjectName || 'Curso'}</p>
                         </div>
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb mb-0">
-                                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-                                <li class="breadcrumb-item"><a href="/courses/search">Búsqueda de Cursos</a></li>
-                                <li class="breadcrumb-item active" aria-current="page">Plan de Evaluación</li>
-                            </ol>
-                        </nav>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="/evaluation-plans/${plan._id}/edit" class="btn btn-outline-primary">
+                                <i class="bi bi-pencil-square me-2"></i>Editar Plan
+                            </a>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb mb-0">
+                                    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                                    <li class="breadcrumb-item"><a href="/courses/search">Búsqueda de Cursos</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page">Plan de Evaluación</li>
+                                </ol>
+                            </nav>
+                        </div>
                     </div>
                 </div>
             </div>

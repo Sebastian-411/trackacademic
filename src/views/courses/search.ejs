@@ -207,16 +207,6 @@
                                                                        class="btn btn-primary flex-fill">
                                                                         <i class="bi bi-clipboard-check me-1"></i>Ver Planes
                                                                     </a>
-                                                                    <% if (user.role === 'student') { %>
-                                                                        <button class="btn btn-success save-plan-btn" 
-                                                                                data-subject-code="<%= subject.code %>"
-                                                                                data-semester="<%= group.semester %>"
-                                                                                data-group-number="<%= group.number %>"
-                                                                                data-bs-toggle="tooltip"
-                                                                                title="Guardar en Mis Planes">
-                                                                            <i class="bi bi-plus-lg"></i>
-                                                                        </button>
-                                                                    <% } %>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -307,103 +297,6 @@
         document.getElementById('semester').addEventListener('change', function() {
             document.getElementById('searchForm').submit();
         });
-
-        // Manejar guardar plan en mis planes
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.save-plan-btn')) {
-                e.preventDefault();
-                
-                const button = e.target.closest('.save-plan-btn');
-                const subjectCode = button.dataset.subjectCode;
-                const semester = button.dataset.semester;
-                const groupNumber = button.dataset.groupNumber;
-                
-                // Deshabilitar botón temporalmente
-                button.disabled = true;
-                button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
-                
-                // Primero buscar los planes disponibles para este curso
-                fetch(`/api/courses/${subjectCode}/${semester}/${groupNumber}/evaluation-plans`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.plans && data.plans.length > 0) {
-                            // Tomar el primer plan disponible o mostrar selector si hay múltiples
-                            const planToSave = data.plans[0];
-                            savePlanToMyPlans(planToSave._id, subjectCode, semester, groupNumber, button);
-                        } else {
-                            // No hay planes, redirigir a la página de planes
-                            showAlert('info', 'No hay planes disponibles para este curso. Te redirigiremos para que veas los detalles.');
-                            setTimeout(() => {
-                                window.location.href = `/courses/${subjectCode}/${semester}/${groupNumber}/evaluation-plans`;
-                            }, 2000);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showAlert('warning', 'No se pudieron obtener los planes. Puedes explorar manualmente.');
-                        setTimeout(() => {
-                            window.location.href = `/courses/${subjectCode}/${semester}/${groupNumber}/evaluation-plans`;
-                        }, 2000);
-                    })
-                    .finally(() => {
-                        // Restaurar botón
-                        button.disabled = false;
-                        button.innerHTML = '<i class="bi bi-plus-lg"></i>';
-                    });
-            }
-        });
-
-        function savePlanToMyPlans(evaluationPlanId, subjectCode, semester, groupNumber, button) {
-            fetch('/api/save-plan', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    evaluationPlanId: evaluationPlanId,
-                    subjectCode: subjectCode,
-                    semester: semester,
-                    groupNumber: groupNumber
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Cambiar el botón a estado "guardado"
-                    button.classList.remove('btn-success');
-                    button.classList.add('btn-secondary');
-                    button.innerHTML = '<i class="bi bi-check-lg"></i>';
-                    button.disabled = true;
-                    button.title = 'Ya guardado en Mis Planes';
-                    
-                    showAlert('success', '¡Plan guardado exitosamente!');
-                    
-                    // Actualizar contador en navbar si existe
-                    updateMyPlansCount();
-                    
-                    // Mostrar opción para ir a mis planes
-                    setTimeout(function() {
-                        if (confirm('¿Quieres ver tus planes guardados?')) {
-                            showMyPlansModal();
-                        }
-                    }, 1500);
-                } else {
-                    if (data.message.includes('Ya tienes este plan guardado')) {
-                        // Plan ya guardado
-                        button.classList.remove('btn-success');
-                        button.classList.add('btn-secondary');
-                        button.innerHTML = '<i class="bi bi-check-lg"></i>';
-                        button.disabled = true;
-                        button.title = 'Ya guardado en Mis Planes';
-                    }
-                    showAlert('info', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('error', 'Error al guardar el plan');
-            });
-        }
 
         function showAlert(type, message) {
             const alertClass = type === 'error' ? 'alert-danger' : type === 'warning' ? 'alert-warning' : 'alert-success';

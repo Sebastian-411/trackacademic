@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - Trackademic</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <div class="container-fluid py-4" id="templateContainer" data-plan-id="<%= plan._id %>">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">
+                            <i class="bi bi-pencil-square me-2"></i>Editar Plan de Evaluación
+                        </h2>
+                        <p class="text-muted mb-0"><%= plan.subjectCode %> - <%= plan.semester %></p>
+                    </div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-0">
+                            <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="/evaluation-plans/<%= plan._id %>">Plan</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Editar</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas de uso -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-graph-up me-2"></i>Estadísticas de Uso
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="border-end">
+                                    <h3 class="text-primary mb-1" id="totalStudents">-</h3>
+                                    <small class="text-muted">Estudiantes Usando</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border-end">
+                                    <h3 class="text-success mb-1" id="averageGrade">-</h3>
+                                    <small class="text-muted">Promedio General</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 class="text-info mb-1" id="completedPlans">-</h3>
+                                <small class="text-muted">Planes Completados</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario de edición -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear me-2"></i>Configuración del Plan
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="templateForm">
+                            <!-- Información básica -->
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="subjectCode" class="form-label">Código de Materia</label>
+                                        <input type="text" class="form-control" id="subjectCode" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="semester" class="form-label">Semestre</label>
+                                        <input type="text" class="form-control" id="semester" 
+                                               placeholder="2024-1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="groupNumber" class="form-label">Número de Grupo</label>
+                                        <input type="number" class="form-control" id="groupNumber" 
+                                               min="1" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Actividades -->
+                            <div class="card mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6 class="card-title mb-0">
+                                        <i class="bi bi-list-task me-2"></i>Actividades de Evaluación
+                                    </h6>
+                                    <button type="button" class="btn btn-primary btn-sm" id="addActivityBtn">
+                                        <i class="bi bi-plus-circle me-1"></i>Agregar Actividad
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Indicador de porcentaje total -->
+                                    <div class="alert alert-info mb-3">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <strong>Porcentaje Total: <span id="totalPercentage">0.0</span>%</strong>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div id="percentageWarning" class="text-danger" style="display: none;">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    Debe sumar 100%
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Lista de actividades -->
+                                    <div id="activitiesList">
+                                        <!-- Las actividades se cargarán aquí dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botones de acción -->
+                            <div class="d-flex justify-content-between">
+                                <a href="/evaluation-plans/<%= plan._id %>" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Toastify JS -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="/js/evaluation-template-edit.js"></script>
+</body>
+</html> 

@@ -9,6 +9,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <!-- Custom CSS -->
     <link href="/css/style.css" rel="stylesheet">
     
@@ -235,9 +237,9 @@
                 <div class="text-center mb-4">
                     <h1 class="text-white fw-bold mb-3">¡Bienvenido de vuelta, <%= user.firstName || 'Estudiante' %>!</h1>
                     <p class="text-white opacity-75 fs-5">Gestiona tus notas y explora planes de evaluación</p>
-                                </div>
-                            </div>
-                        </div>
+                </div>
+            </div>
+        </div>
     </section>
 
     <div class="container">
@@ -293,13 +295,13 @@
                             <i class="bi bi-bookmark"></i>
                             <h5>No tienes planes guardados aún</h5>
                             <p>Busca y guarda planes de evaluación para acceder rápidamente a ellos.</p>
-                            <button class="btn btn-custom-primary" onclick="document.getElementById('searchInput').focus()">
+                            <button class="btn btn-custom-primary" id="searchPlansBtn">
                                 <i class="bi bi-search me-2"></i>
                                 Buscar Planes
                             </button>
-                            </div>
+                        </div>
                         <div id="plansContainer" style="display: none;">
-                            <!-- Los planes se cargarán aquí dinámicamente -->
+                            <!-- Los planes se cargarán dinámicamente aquí -->
                         </div>
                     </div>
                 </div>
@@ -337,154 +339,10 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Toastify JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <!-- Custom JS -->
     <script src="/js/app.js"></script>
-    
-    <script>
-        // Función para mostrar los planes del estudiante
-        async function showMyPlans() {
-            const content = document.getElementById('myPlansContent');
-            
-            try {
-                content.innerHTML = `
-                    <div class="text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
-                        </div>
-                        <p class="mt-2">Cargando tus planes...</p>
-                                                </div>
-                `;
-
-                const response = await fetch('/api/my-plans');
-                const data = await response.json();
-
-                if (data.success && data.plans.length > 0) {
-                    content.innerHTML = data.plans.map(plan => `
-                        <div class="plan-card mb-3">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <div class="plan-subject">${plan.subjectCode}</div>
-                                    <div class="plan-meta">
-                                        ${plan.semester} - Grupo ${plan.groupNumber}
-                                        <br>
-                                        <small>Guardado: ${new Date(plan.savedAt).toLocaleDateString('es-ES')}</small>
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <a href="/evaluation-plans/${plan._id}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="/evaluation-plans/${plan._id}/calculator" class="btn btn-sm btn-success">
-                                        <i class="bi bi-calculator"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    content.innerHTML = `
-                        <div class="empty-state">
-                            <i class="bi bi-bookmark"></i>
-                            <h5>No tienes planes guardados aún</h5>
-                            <p>Busca y guarda planes de evaluación para acceder rápidamente a ellos.</p>
-                            <button class="btn btn-custom-primary" onclick="document.getElementById('searchInput').focus()">
-                                <i class="bi bi-search me-2"></i>
-                                Buscar Planes
-                            </button>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading plans:', error);
-                content.innerHTML = `
-                    <div class="text-center text-danger py-4">
-                        <i class="bi bi-exclamation-triangle fs-2"></i>
-                        <p>Error al cargar los planes</p>
-                        <button class="btn btn-outline-primary" onclick="showMyPlans()">Reintentar</button>
-                    </div>
-                `;
-            }
-        }
-
-        // Cargar planes al inicio
-        document.addEventListener('DOMContentLoaded', function() {
-            // Auto-focus en el buscador
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', function() {
-                    // Agregar funcionalidad de autocompletado si es necesario
-                });
-            }
-        });
-
-        // Función para mostrar notificaciones
-        function showToast(message, type = 'info') {
-            // Implementar sistema de notificaciones
-            const toast = document.createElement('div');
-            toast.className = `alert alert-${type} position-fixed top-0 end-0 m-3`;
-            toast.style.zIndex = '9999';
-            toast.innerHTML = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.remove();
-            }, 3000);
-        }
-
-        // Cargar planes guardados automáticamente al cargar el dashboard
-        async function loadMyPlansForDashboard() {
-            try {
-                const response = await fetch('/api/my-plans');
-                const data = await response.json();
-                
-                const emptyState = document.getElementById('emptyState');
-                const plansContainer = document.getElementById('plansContainer');
-                
-                if (data.success && data.plans.length > 0) {
-                    // Ocultar estado vacío y mostrar planes
-                    emptyState.style.display = 'none';
-                    plansContainer.style.display = 'block';
-                    
-                    plansContainer.innerHTML = `
-                        <div class="row g-3">
-                            ${data.plans.slice(0, 4).map(plan => `
-                                <div class="col-md-6">
-                                    <div class="card h-100 border-0 shadow-sm">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <h6 class="card-title text-primary mb-0">${plan.subjectCode}</h6>
-                                                <span class="badge bg-success">Guardado</span>
-                                            </div>
-                                            <p class="card-text small text-muted">
-                                                ${plan.semester} - Grupo ${plan.groupNumber}
-                                                <br>
-                                                <small>Nota actual: <strong>${plan.currentGrade.toFixed(1)}</strong></small>
-                                            </p>
-                                            <div class="d-flex gap-1">
-                                                <a href="/evaluation-plans/${plan._id}" class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-eye"></i> Ver
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                        ${data.plans.length > 4 ? `
-                            <div class="text-center mt-3">
-                                <button class="btn btn-outline-primary" onclick="showMyPlansModal()">
-                                    Ver todos los planes (${data.plans.length})
-                                </button>
-                            </div>
-                        ` : ''}
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading plans for dashboard:', error);
-            }
-        }
-
-        // Cargar planes al inicializar la página
-        document.addEventListener('DOMContentLoaded', loadMyPlansForDashboard);
-        </script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html> 

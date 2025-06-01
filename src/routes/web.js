@@ -2980,4 +2980,159 @@ router.get('/api/get-grades/:planId', async (req, res) => {
   }
 });
 
+// ===== RUTAS PARA EDICIÓN DE PLANES DE EVALUACIÓN =====
+
+// Ruta para editar un plan de evaluación
+router.get('/evaluation-plans/:planId/edit', requireAuth, async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const EvaluationPlan = require('../models/EvaluationPlan');
+    
+    const plan = await EvaluationPlan.findById(planId);
+    
+    if (!plan) {
+      return res.status(404).render('error', {
+        title: 'Error - Trackademic',
+        message: 'Plan de evaluación no encontrado',
+        error: { status: 404 }
+      });
+    }
+
+    res.render('evaluation-plan/edit', {
+      title: `Editar Plan - ${plan.subjectCode}`,
+      user: req.session.user,
+      plan: plan
+    });
+
+  } catch (error) {
+    console.error('Error al cargar formulario de edición:', error);
+    res.status(500).render('error', {
+      title: 'Error - Trackademic',
+      message: 'Error al cargar el formulario de edición',
+      error: { status: 500 }
+    });
+  }
+});
+
+// API para obtener un plan con estadísticas
+router.get('/api/plans/:planId/stats', requireAuth, async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const EvaluationPlan = require('../models/EvaluationPlan');
+    const StudentPlan = require('../models/StudentPlan');
+    
+    const plan = await EvaluationPlan.findById(planId);
+    
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan no encontrado'
+      });
+    }
+
+    // Obtener estadísticas si el modelo StudentPlan existe
+    let stats = {
+      totalStudents: 0,
+      averageGrade: 0,
+      completedPlans: 0
+    };
+
+    try {
+      const studentStats = await StudentPlan.aggregate([
+        {
+          $match: { originalPlan: plan._id }
+        },
+        {
+          $group: {
+            _id: null,
+            totalStudents: { $sum: 1 },
+            averageGrade: { $avg: '$currentGrade' },
+            completedPlans: {
+              $sum: {
+                $cond: [{ $eq: ['$progress', 100] }, 1, 0]
+              }
+            }
+          }
+        }
+      ]);
+
+      if (studentStats.length > 0) {
+        stats = studentStats[0];
+      }
+    } catch (err) {
+      console.log('Modelo StudentPlan no disponible, usando estadísticas por defecto');
+    }
+
+    res.json({
+      success: true,
+      plan: plan,
+      stats: stats
+    });
+
+  } catch (error) {
+    console.error('Error al obtener estadísticas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener estadísticas'
+    });
+  }
+});
+
+// API para actualizar un plan de evaluación
+router.post('/api/plans/:planId/update', requireAuth, async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const { activities, subjectCode, semester, groupNumber } = req.body;
+    const EvaluationPlan = require('../models/EvaluationPlan');
+
+    const plan = await EvaluationPlan.findById(planId);
+
+    if (!plan) {
+      return res.status(404).json({
+        success: false,
+        message: 'Plan no encontrado'
+      });
+    }
+
+    // Actualizar datos básicos
+    plan.subjectCode = subjectCode;
+    plan.semester = semester;
+    plan.groupNumber = groupNumber;
+
+    // Actualizar actividades
+    plan.activities = activities.map(activity => ({
+      name: activity.name,
+      description: activity.description,
+      percentage: activity.percentage,
+      dueDate: activity.dueDate
+    }));
+
+    await plan.save();
+
+    // Contar estudiantes afectados (si el modelo existe)
+    let affectedStudents = 0;
+    try {
+      const StudentPlan = require('../models/StudentPlan');
+      affectedStudents = await StudentPlan.countDocuments({
+        originalPlan: planId
+      });
+    } catch (err) {
+      console.log('Modelo StudentPlan no disponible');
+    }
+
+    res.json({
+      success: true,
+      message: 'Plan actualizado correctamente',
+      affectedStudents: affectedStudents
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar plan:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar el plan'
+    });
+  }
+});
+
 module.exports = router; 

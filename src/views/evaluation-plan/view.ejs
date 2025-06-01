@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <%- include('../partials/head', { title: 'Plan de Evaluación' }) %>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h4 class="mb-0">Plan de Evaluación - <%= plan.subjectCode %></h4>
+                            <div class="btn-group">
+                                <a href="/evaluation-plans/<%= plan._id %>/edit" class="btn btn-light">
+                                    <i class="bi bi-pencil-square"></i> Editar Plan
+                                </a>
+                                <% if (user.role === 'student') { %>
+                                    <button id="saveGradesBtn" class="btn btn-light ms-2">
+                                        <i class="bi bi-save"></i> Guardar Notas
+                                    </button>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card-body" id="planContainer" data-plan-id="<%= plan._id %>">
+                        <!-- Información Básica -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">Semestre</h6>
+                                        <p class="card-text"><%= plan.semester %></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">Grupo</h6>
+                                        <p class="card-text"><%= plan.groupNumber %></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-subtitle mb-2 text-muted">Profesor</h6>
+                                        <p class="card-text"><%= plan.professor %></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Progreso -->
+                        <div class="progress mb-4" style="height: 25px;">
+                            <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%;">
+                                <span id="progressText">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Actividades -->
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Actividad</th>
+                                        <th>Descripción</th>
+                                        <th>Porcentaje</th>
+                                        <th>Fecha Límite</th>
+                                        <th>Nota</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% plan.activities.forEach(activity => { %>
+                                        <tr>
+                                            <td><%= activity.name %></td>
+                                            <td><%= activity.description %></td>
+                                            <td><%= activity.percentage %>%</td>
+                                            <td><%= activity.dueDate ? new Date(activity.dueDate).toLocaleDateString() : 'No definida' %></td>
+                                            <td width="150">
+                                                <% if (user.role === 'student') { %>
+                                                    <input type="number" 
+                                                        class="form-control form-control-sm grade-input" 
+                                                        min="0" 
+                                                        max="5" 
+                                                        step="0.1"
+                                                        data-activity-id="<%= activity._id %>"
+                                                        data-percentage="<%= activity.percentage %>">
+                                                <% } else { %>
+                                                    -
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="4" class="text-end"><strong>Nota Final:</strong></td>
+                                        <td><strong id="totalGrade">0.0</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="/js/evaluation-plan.js"></script>
+</body>
+</html> 

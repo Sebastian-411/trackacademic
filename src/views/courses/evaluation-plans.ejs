@@ -294,17 +294,6 @@
                         <div class="form-text">Dale un nombre descriptivo para que otros puedan identificarla fácilmente.</div>
                     </div>
                     
-                    <div class="mb-4" id="basePlanSection">
-                        <label for="basePlan" class="form-label">Partir desde</label>
-                        <select class="form-select" id="basePlan">
-                            <option value="">Empezar desde cero</option>
-                            ${evaluationPlans.map(plan => `
-                                <option value="${plan._id}">${plan.versionName} (${plan.activities.length} actividades)</option>
-                            `).join('')}
-                        </select>
-                        <div class="form-text">Opcional: Selecciona un plan existente para copiar sus actividades como punto de partida.</div>
-                    </div>
-
                     <hr class="my-4">
                     
                     <h6 class="mb-3">Actividades del Plan</h6>
