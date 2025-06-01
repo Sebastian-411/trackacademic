@@ -1,256 +1,92 @@
-<%- include('../layouts/main', { 
-    body: `
-        <div class="container-fluid py-4">
-            <!-- Header -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="mb-1">
-                                <i class="bi bi-clipboard-data me-2"></i>Plan de Evaluación
-                            </h2>
-                            <p class="text-muted mb-0">${plan.subjectCode} - ${plan.subjectName || 'Curso'}</p>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <a href="/evaluation-plans/${plan._id}/edit" class="btn btn-outline-primary">
-                                <i class="bi bi-pencil-square me-2"></i>Editar Plan
-                            </a>
-                            <nav aria-label="breadcrumb">
-                                <ol class="breadcrumb mb-0">
-                                    <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-                                    <li class="breadcrumb-item"><a href="/courses/search">Búsqueda de Cursos</a></li>
-                                    <li class="breadcrumb-item active" aria-current="page">Plan de Evaluación</li>
-                                </ol>
-                            </nav>
-                        </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Evaluación - TrackAcademic</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <%- include('../partials/navbar', { user }) %>
+    
+    <div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">
+                            <i class="bi bi-clipboard-data me-2"></i>Plan de Evaluación
+                        </h2>
+                        <p class="text-muted mb-0"><%= plan.subjectCode %> - <%= plan.subjectName || 'Curso' %></p>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="/evaluation-plans/<%= plan._id %>/edit" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil-square me-2"></i>Editar Plan
+                        </a>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                                <li class="breadcrumb-item"><a href="/courses/search">Búsqueda de Cursos</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Plan de Evaluación</li>
+                            </ol>
+                        </nav>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Información del Plan -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card ${plan.isApproved ? 'bg-gradient-success' : 'bg-gradient-warning'} text-white">
-                        <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <h4 class="card-title mb-3">
-                                        ${plan.subjectCode} - Grupo ${plan.groupNumber}
-                                        ${plan.isApproved ? 
-                                            '<span class="badge bg-white text-success ms-2"><i class="bi bi-check-circle me-1"></i>Aprobado</span>' : 
-                                            '<span class="badge bg-white text-warning ms-2"><i class="bi bi-clock me-1"></i>Pendiente</span>'
-                                        }
-                                        ${plan.isMainVersion ? 
-                                            '<span class="badge bg-white text-primary ms-2"><i class="bi bi-star-fill me-1"></i>Principal</span>' : ''
-                                        }
-                                    </h4>
-                                    <h5 class="fw-bold mb-3 text-white-75">${plan.versionName}</h5>
-                                    <div class="row g-3">
-                                        <div class="col-md-3">
-                                            <small class="text-white-50 d-block">Semestre</small>
-                                            <span class="fw-medium">${plan.semester}</span>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-white-50 d-block">Actividades</small>
-                                            <span class="fw-medium">${plan.activities.length}</span>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-white-50 d-block">Creado</small>
-                                            <span class="fw-medium">${new Date(plan.createdAt).toLocaleDateString('es-ES')}</span>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <small class="text-white-50 d-block">Usos</small>
-                                            <span class="fw-medium">${plan.usageCount || 0}</span>
-                                        </div>
+        <!-- Información del Plan -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card <%= plan.isApproved ? 'bg-gradient-success' : 'bg-gradient-warning' %> text-white">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h4 class="card-title mb-3">
+                                    <%= plan.subjectCode %> - Grupo <%= plan.groupNumber %>
+                                    <% if (plan.isApproved) { %>
+                                        <span class="badge bg-white text-success ms-2"><i class="bi bi-check-circle me-1"></i>Aprobado</span>
+                                    <% } else { %>
+                                        <span class="badge bg-white text-warning ms-2"><i class="bi bi-clock me-1"></i>Pendiente</span>
+                                    <% } %>
+                                    <% if (plan.isMainVersion) { %>
+                                        <span class="badge bg-white text-primary ms-2"><i class="bi bi-star-fill me-1"></i>Principal</span>
+                                    <% } %>
+                                </h4>
+                                <h5 class="fw-bold mb-3 text-white-75"><%= plan.versionName %></h5>
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <small class="text-white-50 d-block">Semestre</small>
+                                        <span class="fw-medium"><%= plan.semester %></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-white-50 d-block">Actividades</small>
+                                        <span class="fw-medium"><%= plan.activities.length %></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-white-50 d-block">Creado</small>
+                                        <span class="fw-medium"><%= new Date(plan.createdAt).toLocaleDateString('es-ES') %></span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <small class="text-white-50 d-block">Usos</small>
+                                        <span class="fw-medium"><%= plan.usageCount || 0 %></span>
                                     </div>
                                 </div>
-                                <div class="col-md-4 text-center">
-                                    <i class="bi bi-calculator" style="font-size: 4rem; opacity: 0.7;"></i>
-                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <!-- Actividades del Plan -->
-                <div class="col-lg-8 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-list-check me-2"></i>Actividades de Evaluación
-                            </h5>
-                            <span class="badge bg-primary">${plan.activities.length} actividades</span>
-                        </div>
-                        <div class="card-body">
-                            <!-- Estado Visual de la Materia -->
-                            <div id="subjectStatus" class="alert alert-info mb-4" style="display: none;">
-                                <div class="row align-items-center">
-                                    <div class="col-md-8">
-                                        <h6 class="alert-heading mb-1">
-                                            <i id="statusIcon" class="bi bi-info-circle me-2"></i>
-                                            <span id="statusTitle">Estado de la Materia</span>
-                                        </h6>
-                                        <p id="statusMessage" class="mb-0"></p>
-                                    </div>
-                                    <div class="col-md-4 text-center">
-                                        <div id="statusGrade" class="h3 mb-0 fw-bold"></div>
-                                        <small class="text-muted">Nota Actual</small>
-                                    </div>
-                                </div>
-                                <div class="progress mt-2" style="height: 8px;">
-                                    <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                </div>
-                            </div>
-
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Actividad</th>
-                                            <th class="text-center">Porcentaje</th>
-                                            <th class="text-center">Fecha Entrega</th>
-                                            <th class="text-center">Nota Obtenida</th>
-                                            <th class="text-center">Contribución</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="activitiesTable">
-                                        ${plan.activities.map((activity, index) => `
-                                            <tr>
-                                                <td>
-                                                    <div>
-                                                        <div class="fw-medium">${activity.name}</div>
-                                                        ${activity.description ? 
-                                                            `<small class="text-muted">${activity.description}</small>` : ''
-                                                        }
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="badge bg-light text-dark fw-medium">${activity.percentage}%</span>
-                                                </td>
-                                                <td class="text-center">
-                                                    ${activity.dueDate ? 
-                                                        `<small>${new Date(activity.dueDate).toLocaleDateString('es-ES')}</small>` : 
-                                                        '<small class="text-muted">No definida</small>'
-                                                    }
-                                                </td>
-                                                <td class="text-center">
-                                                    <input type="number" 
-                                                           class="form-control form-control-sm grade-input text-center" 
-                                                           data-activity-index="${index}"
-                                                           min="0" 
-                                                           max="5" 
-                                                           step="0.1" 
-                                                           placeholder="0.0">
-                                                </td>
-                                                <td class="text-center">
-                                                    <span class="contribution fw-medium text-primary" data-activity-index="${index}">0.00</span>
-                                                </td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                    <tfoot class="table-light">
-                                        <tr>
-                                            <th colspan="4" class="text-end">Nota Final Actual:</th>
-                                            <th class="text-center">
-                                                <span id="currentGrade" class="fw-bold text-primary">0.00</span>
-                                            </th>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Calculadora de Notas Mínimas -->
-                <div class="col-lg-4 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-calculator me-2"></i>Calculadora de Notas Mínimas
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label for="targetGrade" class="form-label">Nota Objetivo</label>
-                                <select id="targetGrade" class="form-select">
-                                    <option value="3.0">3.0 (Aprobación)</option>
-                                    <option value="3.5">3.5</option>
-                                    <option value="4.0">4.0</option>
-                                    <option value="4.5">4.5</option>
-                                    <option value="5.0">5.0 (Excelencia)</option>
-                                </select>
-                            </div>
-                            
-                            <button id="calculateBtn" class="btn btn-primary w-100 mb-3">
-                                <i class="bi bi-calculator me-2"></i>Guardar Notas Mínimas
-                            </button>
-                            
-                            <div id="calculationResults" class="alert alert-info" style="display: none;">
-                                <h6 class="alert-heading mb-2">
-                                    <i class="bi bi-lightbulb me-2"></i>Resultados del Cálculo
-                                </h6>
-                                <div id="minimumGradesTable"></div>
-                            </div>
-                            
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Comentarios -->
-            <div class="row">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-chat-dots me-2"></i>Comentarios
-                                <span class="badge bg-secondary">${comments.length}</span>
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <!-- Formulario para nuevo comentario -->
-                            <form id="commentForm" class="mb-4">
-                                <div class="mb-3">
-                                    <label for="commentContent" class="form-label">Agregar Comentario</label>
-                                    <textarea class="form-control" 
-                                              id="commentContent" 
-                                              rows="3" 
-                                              placeholder="Escribe tu comentario sobre este plan de evaluación..."
-                                              required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-send me-2"></i>Enviar Comentario
-                                </button>
-                            </form>
-
-                            <!-- Lista de comentarios -->
-                            <div id="commentsList">
-                                ${comments.length > 0 ? 
-                                    comments.map(comment => `
-                                        <div class="border-bottom pb-3 mb-3">
-                                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="bi bi-person-circle text-primary me-2" style="font-size: 1.2rem;"></i>
-                                                    <div>
-                                                        <span class="fw-medium">Usuario</span>
-                                                        <small class="text-muted d-block">
-                                                            ${new Date(comment.createdAt).toLocaleString('es-ES')}
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p class="mb-0 text-break">${comment.content}</p>
-                                        </div>
-                                    `).join('') :
-                                    `<div class="text-center py-4">
-                                        <i class="bi bi-chat text-muted mb-3" style="font-size: 3rem;"></i>
-                                        <h6 class="text-muted mb-2">No hay comentarios aún</h6>
-                                        <p class="text-muted">Sé el primero en comentar sobre este plan de evaluación.</p>
-                                    </div>`
-                                }
+                            <div class="col-md-4 text-center">
+                                <i class="bi bi-calculator" style="font-size: 4rem; opacity: 0.7;"></i>
                             </div>
                         </div>
                     </div>
@@ -258,56 +94,310 @@
             </div>
         </div>
 
-        <script>
-            // Debugging - verificar si el script se está cargando
-            console.log('Script iniciado');
-            
-            // Función global para guardar notas y calcular notas mínimas
-            window.calculateMinimumGrades = async function() {
-                console.log('calculateMinimumGrades ejecutada');
-                
-                const targetGrade = parseFloat(document.getElementById('targetGrade').value);
-                const resultsDiv = document.getElementById('calculationResults');
-                const tableDiv = document.getElementById('minimumGradesTable');
-                const calculateBtn = document.getElementById('calculateBtn');
-                
-                // Deshabilitar botón temporalmente
-                calculateBtn.disabled = true;
-                calculateBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
-                
-                // Obtener datos del servidor
+        <div class="row">
+            <!-- Actividades del Plan -->
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-list-check me-2"></i>Actividades de Evaluación
+                        </h5>
+                        <span class="badge bg-primary"><%= plan.activities.length %> actividades</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Estado Visual de la Materia -->
+                        <div id="subjectStatus" class="alert alert-info mb-4" style="display: none;">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="alert-heading mb-1">
+                                        <i id="statusIcon" class="bi bi-info-circle me-2"></i>
+                                        <span id="statusTitle">Estado de la Materia</span>
+                                    </h6>
+                                    <p id="statusMessage" class="mb-0"></p>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div id="statusGrade" class="h3 mb-0 fw-bold"></div>
+                                    <small class="text-muted">Nota Actual</small>
+                                </div>
+                            </div>
+                            <div class="progress mt-2" style="height: 8px;">
+                                <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Actividad</th>
+                                        <th class="text-center">Porcentaje</th>
+                                        <th class="text-center">Fecha Entrega</th>
+                                        <th class="text-center">Nota Obtenida</th>
+                                        <th class="text-center">Contribución</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activitiesTable">
+                                    <% plan.activities.forEach((activity, index) => { %>
+                                        <tr>
+                                            <td>
+                                                <div>
+                                                    <div class="fw-medium"><%= activity.name %></div>
+                                                    <% if (activity.description) { %>
+                                                        <small class="text-muted"><%= activity.description %></small>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-light text-dark fw-medium"><%= activity.percentage %>%</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <% if (activity.dueDate) { %>
+                                                    <small><%= new Date(activity.dueDate).toLocaleDateString('es-ES') %></small>
+                                                <% } else { %>
+                                                    <small class="text-muted">No definida</small>
+                                                <% } %>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="number" 
+                                                       class="form-control form-control-sm grade-input text-center" 
+                                                       data-activity-index="<%= index %>"
+                                                       min="0" 
+                                                       max="5" 
+                                                       step="0.1" 
+                                                       placeholder="0.0">
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="contribution fw-medium text-primary" data-activity-index="<%= index %>">0.00</span>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="4" class="text-end">Nota Final Actual:</th>
+                                        <th class="text-center">
+                                            <span id="currentGrade" class="fw-bold text-primary">0.00</span>
+                                        </th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculadora de Notas Mínimas -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-calculator me-2"></i>Calculadora de Notas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="targetGrade" class="form-label">Nota Objetivo</label>
+                            <select id="targetGrade" class="form-select">
+                                <option value="3.0">3.0 (Aprobación)</option>
+                                <option value="3.5">3.5</option>
+                                <option value="4.0">4.0</option>
+                                <option value="4.5">4.5</option>
+                                <option value="5.0">5.0 (Excelencia)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button id="calculateBtn" class="btn btn-primary">
+                                <i class="bi bi-calculator me-2"></i>Calcular Notas Mínimas
+                            </button>
+                            
+                            <!-- Botón para guardar plan (solo visible si no está guardado) -->
+                            <button id="savePlanBtn" class="btn btn-success" style="display: none;">
+                                <i class="bi bi-plus-circle me-2"></i>Guardar Plan en Mis Materias
+                            </button>
+                            
+                            <!-- Indicador de plan ya guardado -->
+                            <div id="planSavedIndicator" class="alert alert-success mb-0" style="display: none;">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>Plan guardado</strong> - Ya tienes este plan en tus materias
+                            </div>
+                        </div>
+                        
+                        <div id="calculationResults" class="alert alert-info mt-3" style="display: none;">
+                            <h6 class="alert-heading mb-2">
+                                <i class="bi bi-lightbulb me-2"></i>Resultados del Cálculo
+                            </h6>
+                            <div id="minimumGradesTable"></div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comentarios -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-chat-dots me-2"></i>Comentarios
+                            <span class="badge bg-secondary"><%= comments.length %></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Formulario para nuevo comentario -->
+                        <form id="commentForm" class="mb-4">
+                            <div class="mb-3">
+                                <label for="commentContent" class="form-label">Agregar Comentario</label>
+                                <textarea class="form-control" 
+                                          id="commentContent" 
+                                          rows="3" 
+                                          placeholder="Escribe tu comentario sobre este plan de evaluación..."
+                                          required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-2"></i>Enviar Comentario
+                            </button>
+                        </form>
+
+                        <!-- Lista de comentarios -->
+                        <div id="commentsList">
+                            <% if (comments.length > 0) { %>
+                                <% comments.forEach(comment => { %>
+                                    <div class="border-bottom pb-3 mb-3">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-person-circle text-primary me-2" style="font-size: 1.2rem;"></i>
+                                                <div>
+                                                    <span class="fw-medium">Usuario</span>
+                                                    <small class="text-muted d-block">
+                                                        <%= new Date(comment.createdAt).toLocaleString('es-ES') %>
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="mb-0 text-break"><%= comment.content %></p>
+                                    </div>
+                                <% }) %>
+                            <% } else { %>
+                                <div class="text-center py-4">
+                                    <i class="bi bi-chat text-muted mb-3" style="font-size: 3rem;"></i>
+                                    <h6 class="text-muted mb-2">No hay comentarios aún</h6>
+                                    <p class="text-muted">Sé el primero en comentar sobre este plan de evaluación.</p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script con datos del servidor -->
+    <script id="serverData" type="application/json">
+        {
+            "planActivities": <%- JSON.stringify(plan.activities) %>,
+            "planId": "<%= plan._id %>",
+            "subjectCode": "<%= plan.subjectCode %>",
+            "semester": "<%= plan.semester %>",
+            "groupNumber": <%= plan.groupNumber %>,
+            "user": <%- JSON.stringify(user) %>
+        }
+    </script>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Toastify JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/app.js"></script>
+    
+    <script>
+        // Debugging - verificar si el script se está cargando
+        console.log('Script iniciado');
+        
+        // Función para verificar si el plan ya está guardado
+        window.checkIfPlanSaved = async function() {
+            try {
                 const serverData = JSON.parse(document.getElementById('serverData').textContent);
-                const planActivities = serverData.planActivities;
                 const planId = serverData.planId;
                 
-                // Recopilar todas las notas ingresadas
-                const grades = [];
-                let currentContribution = 0;
-                let remainingPercentage = 0;
-                let completedActivities = 0;
-                const pendingActivities = [];
+                const response = await fetch('/api/check-saved-plan/' + planId);
+                const result = await response.json();
                 
-                planActivities.forEach((activity, index) => {
+                const savePlanBtn = document.getElementById('savePlanBtn');
+                const planSavedIndicator = document.getElementById('planSavedIndicator');
+                
+                if (result.success && result.isSaved) {
+                    // Plan ya guardado
+                    savePlanBtn.style.display = 'none';
+                    planSavedIndicator.style.display = 'block';
+                } else {
+                    // Plan no guardado
+                    savePlanBtn.style.display = 'block';
+                    planSavedIndicator.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error al verificar plan guardado:', error);
+                // Mostrar botón por defecto si hay error
+                document.getElementById('savePlanBtn').style.display = 'block';
+            }
+        };
+
+        // Función para guardar el plan
+        window.savePlanToMyCourses = async function() {
+            try {
+                const savePlanBtn = document.getElementById('savePlanBtn');
+                const serverData = JSON.parse(document.getElementById('serverData').textContent);
+                const planId = serverData.planId;
+                
+                // Deshabilitar botón temporalmente
+                savePlanBtn.disabled = true;
+                savePlanBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Guardando...';
+                
+                // Recopilar notas si hay alguna
+                const grades = [];
+                let hasAnyGrade = false;
+                
+                serverData.planActivities.forEach((activity, index) => {
                     const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
                     const grade = parseFloat(gradeInput.value) || 0;
                     
-                    // Agregar al array para guardar (incluso si es 0)
                     grades.push({
                         activityIndex: index,
                         grade: grade
                     });
                     
                     if (grade && grade > 0) {
-                        currentContribution += (grade * activity.percentage) / 100;
-                        completedActivities++;
-                    } else {
-                        remainingPercentage += activity.percentage;
-                        pendingActivities.push({ ...activity, index });
+                        hasAnyGrade = true;
                     }
                 });
                 
-                try {
-                    // Guardar las notas en la base de datos
+                // Guardar el plan
+                const savePlanResponse = await fetch('/api/save-plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        evaluationPlanId: planId,
+                        subjectCode: serverData.subjectCode,
+                        semester: serverData.semester,
+                        groupNumber: serverData.groupNumber
+                    })
+                });
+                
+                const savePlanResult = await savePlanResponse.json();
+                
+                if (!savePlanResult.success) {
+                    throw new Error(savePlanResult.message || 'Error al agregar el plan');
+                }
+                
+                // Guardar notas si hay alguna
+                if (hasAnyGrade) {
                     const response = await fetch('/api/save-grades/' + planId, {
                         method: 'POST',
                         headers: {
@@ -319,339 +409,510 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        // Mostrar mensaje de éxito
                         if (typeof showToast === 'function') {
-                            showToast('Notas guardadas exitosamente', 'success');
-                        }
-                        
-                        // Continuar con el cálculo de notas mínimas
-                        calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage);
-                    } else {
-                        throw new Error(result.message || 'Error al guardar las notas');
-                    }
-                    
-                } catch (error) {
-                    console.error('Error al guardar notas:', error);
-                    if (typeof showToast === 'function') {
-                        showToast('Error al guardar las notas: ' + error.message, 'error');
-                    }
-                    
-                    // Continuar con el cálculo aunque falle el guardado
-                    calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage);
-                } finally {
-                    // Rehabilitar botón
-                    calculateBtn.disabled = false;
-                    calculateBtn.innerHTML = '<i class="bi bi-calculator me-2"></i>Guardar Notas Mínimas';
-                }
-            };
-            
-            // Función separada para mostrar los cálculos
-            function calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage) {
-                // Cambiar el estilo del alert según el resultado
-                resultsDiv.className = 'alert mb-3';
-                
-                if (pendingActivities.length === 0) {
-                    // Todas las actividades completadas
-                    resultsDiv.className += ' alert-info';
-                    var statusClass = currentContribution >= 3.0 ? 'text-success' : 'text-danger';
-                    var statusMessage = '';
-                    if (currentContribution >= 3.0) {
-                        if (currentContribution >= 4.5) {
-                            statusMessage = '🏆 ¡Excelente! Has aprobado con nota sobresaliente.';
-                        } else if (currentContribution >= 4.0) {
-                            statusMessage = '🎯 ¡Muy bien! Has aprobado con muy buena nota.';
-                        } else {
-                            statusMessage = '✅ ¡Aprobado! Has pasado la materia.';
+                            showToast('Plan guardado y notas sincronizadas', 'success');
                         }
                     } else {
-                        statusMessage = '❌ Has reprobado la materia. Contacta al profesor.';
-                    }
-                    
-                    tableDiv.innerHTML = 
-                        '<div class="text-center py-3">' +
-                            '<i class="bi bi-check-all text-success mb-2" style="font-size: 2rem;"></i>' +
-                            '<h6 class="text-success">¡Todas las actividades completadas!</h6>' +
-                            '<p class="mb-2">Tu nota final es: <strong class="h5 text-primary">' + currentContribution.toFixed(2) + '</strong></p>' +
-                            '<p class="mb-0 ' + statusClass + '">' + statusMessage + '</p>' +
-                        '</div>';
-                    resultsDiv.style.display = 'block';
-                    return;
-                }
-                
-                const neededContribution = targetGrade - currentContribution;
-                const requiredAverage = (neededContribution * 100) / remainingPercentage;
-                
-                var tableHTML = '';
-                
-                if (requiredAverage <= 0) {
-                    // Ya alcanzó la nota objetivo
-                    resultsDiv.className += ' alert-success';
-                    tableHTML = 
-                        '<div class="text-center py-3">' +
-                            '<i class="bi bi-check-circle-fill text-success mb-2" style="font-size: 2rem;"></i>' +
-                            '<h6 class="text-success">¡Ya alcanzaste la nota objetivo!</h6>' +
-                            '<p class="mb-2">Nota actual: <strong class="h5 text-success">' + currentContribution.toFixed(2) + '</strong></p>' +
-                            '<p class="mb-0">Las actividades restantes solo pueden mejorar tu promedio. ¡Sigue así!</p>' +
-                        '</div>';
-                } else if (requiredAverage <= 5.0) {
-                    // Nota objetivo alcanzable
-                    var alertClass = '';
-                    var textClass = '';
-                    var difficultyText = '';
-                    
-                    if (requiredAverage <= 3.0) {
-                        alertClass = ' alert-success';
-                        textClass = 'text-success';
-                        difficultyText = '🎯 ¡Fácil de lograr!';
-                    } else if (requiredAverage <= 4.0) {
-                        alertClass = ' alert-warning';
-                        textClass = 'text-warning';
-                        difficultyText = '⚠️ Requiere esfuerzo';
-                    } else {
-                        alertClass = ' alert-info';
-                        textClass = 'text-info';
-                        difficultyText = '🚀 ¡Desafío aceptado!';
-                    }
-                    
-                    resultsDiv.className += alertClass;
-                    
-                    tableHTML = 
-                        '<div class="mb-3 text-center">' +
-                            '<h6 class="' + textClass + '">' + difficultyText + '</h6>' +
-                            '<p class="mb-0">Promedio requerido en actividades restantes: ' +
-                                '<strong class="h5 ' + textClass + '">' + requiredAverage.toFixed(2) + '</strong>' +
-                            '</p>' +
-                        '</div>' +
-                        '<div class="table-responsive">' +
-                            '<table class="table table-sm">' +
-                                '<thead>' +
-                                    '<tr>' +
-                                        '<th>Actividad</th>' +
-                                        '<th class="text-center">% Peso</th>' +
-                                        '<th class="text-center">Nota Mínima</th>' +
-                                        '<th class="text-center">Dificultad</th>' +
-                                    '</tr>' +
-                                '</thead>' +
-                                '<tbody>';
-                    
-                    pendingActivities.forEach(function(activity) {
-                        const minGrade = Math.max(0, requiredAverage);
-                        var difficulty = '';
-                        var statusClass = '';
-                        var icon = '';
-                        
-                        if (minGrade <= 3.0) {
-                            difficulty = 'Fácil';
-                            statusClass = 'text-success';
-                            icon = '😊';
-                        } else if (minGrade <= 4.0) {
-                            difficulty = 'Moderado';
-                            statusClass = 'text-warning';
-                            icon = '😐';
-                        } else if (minGrade <= 4.5) {
-                            difficulty = 'Difícil';
-                            statusClass = 'text-danger';
-                            icon = '😰';
-                        } else {
-                            difficulty = 'Muy Difícil';
-                            statusClass = 'text-danger';
-                            icon = '😰';
+                        if (typeof showToast === 'function') {
+                            showToast('Plan guardado (error al sincronizar notas)', 'warning');
                         }
-                        
-                        tableHTML += 
-                            '<tr>' +
-                                '<td>' + activity.name + '</td>' +
-                                '<td class="text-center">' + activity.percentage + '%</td>' +
-                                '<td class="text-center ' + statusClass + '"><strong>' + minGrade.toFixed(2) + '</strong></td>' +
-                                '<td class="text-center ' + statusClass + '">' + icon + ' ' + difficulty + '</td>' +
-                            '</tr>';
-                    });
-                    
-                    tableHTML += '</tbody></table></div>';
-                    
-                    if (requiredAverage > 4.5) {
-                        tableHTML += '<div class="mt-2 text-center"><small class="text-muted">💡 Tip: Considera hablar con el profesor sobre oportunidades adicionales.</small></div>';
                     }
                 } else {
-                    // Nota objetivo NO alcanzable
-                    resultsDiv.className += ' alert-danger';
-                    tableHTML = 
-                        '<div class="text-center py-3">' +
-                            '<i class="bi bi-x-circle-fill text-danger mb-2" style="font-size: 2rem;"></i>' +
-                            '<h6 class="text-danger">❌ Nota objetivo no alcanzable</h6>' +
-                            '<p class="mb-2">Necesitarías un promedio de <strong class="text-danger">' + requiredAverage.toFixed(2) + '</strong> en las actividades restantes.</p>' +
-                            '<div class="bg-light p-3 rounded">' +
-                                '<h6 class="mb-2">💡 Opciones alternativas:</h6>' +
-                                '<ul class="list-unstyled mb-0 text-start">' +
-                                    '<li>• Hablar con el profesor sobre recuperaciones</li>' +
-                                    '<li>• Verificar si hay actividades extra</li>' +
-                                    '<li>• Considerar diferentes metas de calificación</li>' +
-                                '</ul>' +
-                            '</div>' +
-                        '</div>';
-                }
-                
-                tableDiv.innerHTML = tableHTML;
-                resultsDiv.style.display = 'block';
-            }
-            
-            // Verificar que la función esté disponible
-            console.log('Función asignada:', typeof window.calculateMinimumGrades);
-        </script>
-
-        <!-- Script con datos del servidor -->
-        <script id="serverData" type="application/json">
-            {
-                "planActivities": ${JSON.stringify(plan.activities)},
-                "planId": "${plan._id}"
-            }
-        </script>
-
-        <script>
-            console.log('Script principal iniciado');
-            
-            // Obtener datos del servidor
-            try {
-                const serverData = JSON.parse(document.getElementById('serverData').textContent);
-                const planActivities = serverData.planActivities;
-                const planId = serverData.planId;
-                
-                console.log('Datos del servidor:', { planActivities, planId });
-
-                function updateCalculations() {
-                    let totalContribution = 0;
-                    let completedActivities = 0;
-                    let totalActivities = planActivities.length;
-                    
-                    planActivities.forEach((activity, index) => {
-                        const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
-                        const contributionSpan = document.querySelector('span[data-activity-index="' + index + '"]');
-                        
-                        const grade = parseFloat(gradeInput.value) || 0;
-                        const contribution = (grade * activity.percentage) / 100;
-                        
-                        contributionSpan.textContent = contribution.toFixed(2);
-                        totalContribution += contribution;
-                        
-                        // Contar actividades completadas
-                        if (grade > 0) {
-                            completedActivities++;
-                        }
-                    });
-                    
-                    // Actualizar nota actual
-                    const currentGradeElement = document.getElementById('currentGrade');
-                    currentGradeElement.textContent = totalContribution.toFixed(2);
-                    
-                    // Cambiar color según la nota
-                    if (totalContribution >= 4.5) {
-                        currentGradeElement.className = 'fw-bold text-success';
-                    } else if (totalContribution >= 3.0) {
-                        currentGradeElement.className = 'fw-bold text-primary';
-                    } else {
-                        currentGradeElement.className = 'fw-bold text-danger';
+                    if (typeof showToast === 'function') {
+                        showToast('Plan guardado exitosamente', 'success');
                     }
                 }
+                
+                // Incrementar contador de uso
+                fetch('/api/evaluation-plans/' + planId + '/use', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                // Actualizar interfaz
+                document.getElementById('savePlanBtn').style.display = 'none';
+                document.getElementById('planSavedIndicator').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error al guardar plan:', error);
+                if (typeof showToast === 'function') {
+                    showToast('Error: ' + error.message, 'error');
+                }
+                
+                // Rehabilitar botón
+                const savePlanBtn = document.getElementById('savePlanBtn');
+                savePlanBtn.disabled = false;
+                savePlanBtn.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Guardar Plan en Mis Materias';
+            }
+        };
 
-                // Función para cargar las notas guardadas
-                async function loadSavedGrades() {
-                    try {
-                        const serverData = JSON.parse(document.getElementById('serverData').textContent);
-                        const planId = serverData.planId;
+        // Función global para guardar notas y calcular notas mínimas
+        window.calculateMinimumGrades = async function() {
+            console.log('calculateMinimumGrades ejecutada');
+            
+            // Obtener datos del servidor
+            const serverData = JSON.parse(document.getElementById('serverData').textContent);
+            const planActivities = serverData.planActivities;
+            const planId = serverData.planId;
+            
+            // Verificar si es estudiante y si tiene el plan guardado
+            if (serverData.user && serverData.user.role === 'student') {
+                try {
+                    const response = await fetch('/api/check-saved-plan/' + planId);
+                    const result = await response.json();
+                    
+                    if (result.success && !result.isSaved) {
+                        // El plan no está guardado, preguntar si quiere guardarlo
+                        console.log('Plan no guardado, mostrando modal...');
+                        const shouldSave = await showSavePlanModal();
+                        console.log('Respuesta del modal:', shouldSave);
                         
-                        const response = await fetch('/api/get-grades/' + planId);
+                        if (shouldSave) {
+                            // Guardar el plan primero
+                            await savePlanToMyCourses();
+                            
+                            // Mostrar mensaje de éxito
+                            if (typeof showToast === 'function') {
+                                showToast('Plan guardado. Calculando notas mínimas...', 'success');
+                            }
+                        } else {
+                            // Usuario decidió no guardar, mostrar mensaje informativo
+                            if (typeof showToast === 'function') {
+                                showToast('Calculando notas mínimas...', 'info');
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al verificar plan guardado:', error);
+                    // Continuar con el cálculo aunque haya error
+                }
+            }
+            
+            // SIEMPRE continuar con el cálculo de notas mínimas
+            console.log('Ejecutando cálculo de notas mínimas...');
+            
+            const targetGrade = parseFloat(document.getElementById('targetGrade').value);
+            const resultsDiv = document.getElementById('calculationResults');
+            const tableDiv = document.getElementById('minimumGradesTable');
+            
+            // Recopilar todas las notas ingresadas
+            let currentContribution = 0;
+            let remainingPercentage = 0;
+            let completedActivities = 0;
+            const pendingActivities = [];
+            
+            planActivities.forEach((activity, index) => {
+                const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
+                const grade = parseFloat(gradeInput.value) || 0;
+                
+                if (grade && grade > 0) {
+                    currentContribution += (grade * activity.percentage) / 100;
+                    completedActivities++;
+                } else {
+                    remainingPercentage += activity.percentage;
+                    pendingActivities.push({ ...activity, index });
+                }
+            });
+            
+            // Mostrar los cálculos
+            calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage);
+            
+            console.log('Cálculo de notas mínimas completado');
+        };
+        
+        // Función para mostrar modal de confirmación para guardar plan
+        window.showSavePlanModal = function() {
+            return new Promise((resolve) => {
+                // Crear modal dinámicamente
+                const modalHTML = 
+                    '<div class="modal fade" id="savePlanModal" tabindex="-1" aria-hidden="true">' +
+                        '<div class="modal-dialog modal-dialog-centered">' +
+                            '<div class="modal-content">' +
+                                '<div class="modal-header">' +
+                                    '<h5 class="modal-title">' +
+                                        '<i class="bi bi-question-circle text-primary me-2"></i>' +
+                                        'Guardar Plan de Evaluación' +
+                                    '</h5>' +
+                                    '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
+                                '</div>' +
+                                '<div class="modal-body">' +
+                                    '<div class="text-center mb-3">' +
+                                        '<i class="bi bi-bookmark-plus text-success" style="font-size: 3rem;"></i>' +
+                                    '</div>' +
+                                    '<p class="text-center mb-3">' +
+                                        '<strong>¿Te gustaría guardar este plan en tus materias?</strong>' +
+                                    '</p>' +
+                                    '<p class="text-muted text-center mb-0">' +
+                                        'Esto te permitirá acceder rápidamente al plan y guardar tus notas de forma permanente.' +
+                                    '</p>' +
+                                '</div>' +
+                                '<div class="modal-footer">' +
+                                    '<button type="button" id="noSaveBtn" class="btn btn-secondary" data-bs-dismiss="modal">' +
+                                        'No, solo calcular' +
+                                    '</button>' +
+                                    '<button type="button" id="yesSaveBtn" class="btn btn-success" data-bs-dismiss="modal">' +
+                                        '<i class="bi bi-check-lg me-2"></i>Sí, guardar plan' +
+                                    '</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                
+                // Agregar modal al DOM
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                
+                // Agregar event listeners a los botones
+                const noSaveBtn = document.getElementById('noSaveBtn');
+                const yesSaveBtn = document.getElementById('yesSaveBtn');
+                
+                noSaveBtn.addEventListener('click', function() {
+                    resolve(false);
+                    cleanupModal();
+                });
+                
+                yesSaveBtn.addEventListener('click', function() {
+                    resolve(true);
+                    cleanupModal();
+                });
+                
+                // Función para limpiar el modal
+                function cleanupModal() {
+                    setTimeout(function() {
+                        const modal = document.getElementById('savePlanModal');
+                        if (modal) {
+                            modal.remove();
+                        }
+                    }, 300);
+                }
+                
+                // Mostrar modal usando Bootstrap JS
+                const modalElement = document.getElementById('savePlanModal');
+                if (typeof bootstrap !== 'undefined') {
+                    const bsModal = new bootstrap.Modal(modalElement);
+                    bsModal.show();
+                } else {
+                    // Fallback: mostrar modal manualmente
+                    modalElement.style.display = 'block';
+                    modalElement.classList.add('show');
+                    document.body.classList.add('modal-open');
+                }
+            });
+        };
+
+        // Función separada para mostrar los cálculos
+        function calculateMinimumGradesDisplay(targetGrade, resultsDiv, tableDiv, currentContribution, pendingActivities, remainingPercentage) {
+            // Cambiar el estilo del alert según el resultado
+            resultsDiv.className = 'alert mt-3';
+            
+            if (pendingActivities.length === 0) {
+                // Todas las actividades completadas
+                resultsDiv.className += ' alert-info';
+                var statusClass = currentContribution >= 3.0 ? 'text-success' : 'text-danger';
+                var statusMessage = '';
+                if (currentContribution >= 3.0) {
+                    if (currentContribution >= 4.5) {
+                        statusMessage = '🏆 ¡Excelente! Has aprobado con nota sobresaliente.';
+                    } else if (currentContribution >= 4.0) {
+                        statusMessage = '🎯 ¡Muy bien! Has aprobado con muy buena nota.';
+                    } else {
+                        statusMessage = '✅ ¡Aprobado! Has pasado la materia.';
+                    }
+                } else {
+                    statusMessage = '❌ Has reprobado la materia. Contacta al profesor.';
+                }
+                
+                tableDiv.innerHTML = 
+                    '<div class="text-center py-3">' +
+                        '<i class="bi bi-check-all text-success mb-2" style="font-size: 2rem;"></i>' +
+                        '<h6 class="text-success">¡Todas las actividades completadas!</h6>' +
+                        '<p class="mb-2">Tu nota final es: <strong class="h5 text-primary">' + currentContribution.toFixed(2) + '</strong></p>' +
+                        '<p class="mb-0 ' + statusClass + '">' + statusMessage + '</p>' +
+                    '</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            const neededContribution = targetGrade - currentContribution;
+            const requiredAverage = (neededContribution * 100) / remainingPercentage;
+            
+            var tableHTML = '';
+            
+            if (requiredAverage <= 0) {
+                // Ya alcanzó la nota objetivo
+                resultsDiv.className += ' alert-success';
+                tableHTML = 
+                    '<div class="text-center py-3">' +
+                        '<i class="bi bi-check-circle-fill text-success mb-2" style="font-size: 2rem;"></i>' +
+                        '<h6 class="text-success">¡Ya alcanzaste la nota objetivo!</h6>' +
+                        '<p class="mb-2">Nota actual: <strong class="h5 text-success">' + currentContribution.toFixed(2) + '</strong></p>' +
+                        '<p class="mb-0">Las actividades restantes solo pueden mejorar tu promedio. ¡Sigue así!</p>' +
+                    '</div>';
+            } else if (requiredAverage <= 5.0) {
+                // Nota objetivo alcanzable
+                var alertClass = '';
+                var textClass = '';
+                var difficultyText = '';
+                
+                if (requiredAverage <= 3.0) {
+                    alertClass = ' alert-success';
+                    textClass = 'text-success';
+                    difficultyText = '🎯 ¡Fácil de lograr!';
+                } else if (requiredAverage <= 4.0) {
+                    alertClass = ' alert-warning';
+                    textClass = 'text-warning';
+                    difficultyText = '⚠️ Requiere esfuerzo';
+                } else {
+                    alertClass = ' alert-info';
+                    textClass = 'text-info';
+                    difficultyText = '🚀 ¡Desafío aceptado!';
+                }
+                
+                resultsDiv.className += alertClass;
+                
+                tableHTML = 
+                    '<div class="mb-3 text-center">' +
+                        '<h6 class="' + textClass + '">' + difficultyText + '</h6>' +
+                        '<p class="mb-0">Promedio requerido en actividades restantes: ' +
+                            '<strong class="h5 ' + textClass + '">' + requiredAverage.toFixed(2) + '</strong>' +
+                        '</p>' +
+                    '</div>' +
+                    '<div class="table-responsive">' +
+                        '<table class="table table-sm">' +
+                            '<thead>' +
+                                '<tr>' +
+                                    '<th>Actividad</th>' +
+                                    '<th class="text-center">% Peso</th>' +
+                                    '<th class="text-center">Nota Mínima</th>' +
+                                    '<th class="text-center">Dificultad</th>' +
+                                '</tr>' +
+                            '</thead>' +
+                            '<tbody>';
+                
+                pendingActivities.forEach(function(activity) {
+                    const minGrade = Math.max(0, requiredAverage);
+                    var difficulty = '';
+                    var statusClass = '';
+                    var icon = '';
+                    
+                    if (minGrade <= 3.0) {
+                        difficulty = 'Fácil';
+                        statusClass = 'text-success';
+                        icon = '😊';
+                    } else if (minGrade <= 4.0) {
+                        difficulty = 'Moderado';
+                        statusClass = 'text-warning';
+                        icon = '😐';
+                    } else if (minGrade <= 4.5) {
+                        difficulty = 'Difícil';
+                        statusClass = 'text-danger';
+                        icon = '😰';
+                    } else {
+                        difficulty = 'Muy Difícil';
+                        statusClass = 'text-danger';
+                        icon = '😰';
+                    }
+                    
+                    tableHTML += 
+                        '<tr>' +
+                            '<td>' + activity.name + '</td>' +
+                            '<td class="text-center">' + activity.percentage + '%</td>' +
+                            '<td class="text-center ' + statusClass + '"><strong>' + minGrade.toFixed(2) + '</strong></td>' +
+                            '<td class="text-center ' + statusClass + '">' + icon + ' ' + difficulty + '</td>' +
+                        '</tr>';
+                });
+                
+                tableHTML += '</tbody></table></div>';
+                
+                if (requiredAverage > 4.5) {
+                    tableHTML += '<div class="mt-2 text-center"><small class="text-muted">💡 Tip: Considera hablar con el profesor sobre oportunidades adicionales.</small></div>';
+                }
+            } else {
+                // Nota objetivo NO alcanzable
+                resultsDiv.className += ' alert-danger';
+                tableHTML = 
+                    '<div class="text-center py-3">' +
+                        '<i class="bi bi-x-circle-fill text-danger mb-2" style="font-size: 2rem;"></i>' +
+                        '<h6 class="text-danger">❌ Nota objetivo no alcanzable</h6>' +
+                        '<p class="mb-2">Necesitarías un promedio de <strong class="text-danger">' + requiredAverage.toFixed(2) + '</strong> en las actividades restantes.</p>' +
+                        '<div class="bg-light p-3 rounded">' +
+                            '<h6 class="mb-2">💡 Opciones alternativas:</h6>' +
+                            '<ul class="list-unstyled mb-0 text-start">' +
+                                '<li>• Hablar con el profesor sobre recuperaciones</li>' +
+                                '<li>• Verificar si hay actividades extra</li>' +
+                                '<li>• Considerar diferentes metas de calificación</li>' +
+                            '</ul>' +
+                        '</div>' +
+                    '</div>';
+            }
+            
+            tableDiv.innerHTML = tableHTML;
+            resultsDiv.style.display = 'block';
+        }
+        
+        // Verificar que la función esté disponible
+        console.log('Función asignada:', typeof window.calculateMinimumGrades);
+    </script>
+
+    <script>
+        console.log('Script principal iniciado');
+        
+        // Obtener datos del servidor
+        try {
+            const serverData = JSON.parse(document.getElementById('serverData').textContent);
+            const planActivities = serverData.planActivities;
+            const planId = serverData.planId;
+            
+            console.log('Datos del servidor:', { planActivities, planId });
+
+            function updateCalculations() {
+                let totalContribution = 0;
+                let completedActivities = 0;
+                let totalActivities = planActivities.length;
+                
+                planActivities.forEach((activity, index) => {
+                    const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
+                    const contributionSpan = document.querySelector('span[data-activity-index="' + index + '"]');
+                    
+                    const grade = parseFloat(gradeInput.value) || 0;
+                    const contribution = (grade * activity.percentage) / 100;
+                    
+                    contributionSpan.textContent = contribution.toFixed(2);
+                    totalContribution += contribution;
+                    
+                    // Contar actividades completadas
+                    if (grade > 0) {
+                        completedActivities++;
+                    }
+                });
+                
+                // Actualizar nota actual
+                const currentGradeElement = document.getElementById('currentGrade');
+                currentGradeElement.textContent = totalContribution.toFixed(2);
+                
+                // Cambiar color según la nota
+                if (totalContribution >= 4.5) {
+                    currentGradeElement.className = 'fw-bold text-success';
+                } else if (totalContribution >= 3.0) {
+                    currentGradeElement.className = 'fw-bold text-primary';
+                } else {
+                    currentGradeElement.className = 'fw-bold text-danger';
+                }
+            }
+
+            // Función para cargar las notas guardadas
+            async function loadSavedGrades() {
+                try {
+                    const serverData = JSON.parse(document.getElementById('serverData').textContent);
+                    const planId = serverData.planId;
+                    
+                    const response = await fetch('/api/get-grades/' + planId);
+                    const result = await response.json();
+                    
+                    if (result.success && result.grades.length > 0) {
+                        console.log('Cargando notas guardadas:', result.grades);
+                        
+                        // Llenar los campos con las notas guardadas
+                        result.grades.forEach(function(gradeData) {
+                            const gradeInput = document.querySelector('[data-activity-index="' + gradeData.activityIndex + '"]');
+                            if (gradeInput && gradeData.grade > 0) {
+                                gradeInput.value = gradeData.grade.toFixed(1);
+                            }
+                        });
+                        
+                        // Actualizar los cálculos después de cargar las notas
+                        updateCalculations();
+                        
+                        if (typeof showToast === 'function') {
+                            showToast('Notas cargadas desde la base de datos', 'info');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al cargar notas guardadas:', error);
+                    // No mostrar error al usuario ya que puede ser normal no tener notas guardadas
+                }
+            }
+
+            // Event Listeners
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM cargado');
+                
+                // Cargar notas guardadas al inicializar
+                loadSavedGrades();
+                
+                // Verificar si el plan ya está guardado (solo para estudiantes)
+                const serverData = JSON.parse(document.getElementById('serverData').textContent);
+                if (serverData.user && serverData.user.role === 'student') {
+                    checkIfPlanSaved();
+                }
+                
+                // Event listener para el botón de calcular
+                const calculateBtn = document.getElementById('calculateBtn');
+                if (calculateBtn) {
+                    calculateBtn.addEventListener('click', function() {
+                        console.log('Botón calcular clickeado');
+                        calculateMinimumGrades();
+                    });
+                }
+                
+                // Event listener para el botón de guardar plan
+                const savePlanBtn = document.getElementById('savePlanBtn');
+                if (savePlanBtn) {
+                    savePlanBtn.addEventListener('click', function() {
+                        console.log('Botón guardar plan clickeado');
+                        savePlanToMyCourses();
+                    });
+                }
+                
+                // Actualizar cálculos cuando cambian las notas
+                document.addEventListener('input', function(e) {
+                    if (e.target.classList.contains('grade-input')) {
+                        updateCalculations();
+                    }
+                });
+                
+                // Envío de comentarios
+                document.getElementById('commentForm').addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const content = document.getElementById('commentContent').value.trim();
+                    if (!content) return;
+                    
+                    try {
+                        const response = await fetch('/evaluation-plans/' + planId + '/comments', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ content })
+                        });
+                        
                         const result = await response.json();
                         
-                        if (result.success && result.grades.length > 0) {
-                            console.log('Cargando notas guardadas:', result.grades);
-                            
-                            // Llenar los campos con las notas guardadas
-                            result.grades.forEach(function(gradeData) {
-                                const gradeInput = document.querySelector('[data-activity-index="' + gradeData.activityIndex + '"]');
-                                if (gradeInput && gradeData.grade > 0) {
-                                    gradeInput.value = gradeData.grade.toFixed(1);
-                                }
-                            });
-                            
-                            // Actualizar los cálculos después de cargar las notas
-                            updateCalculations();
-                            
+                        if (result.success) {
                             if (typeof showToast === 'function') {
-                                showToast('Notas cargadas desde la base de datos', 'info');
+                                showToast('Comentario agregado exitosamente', 'success');
+                            }
+                            // Recargar la página para mostrar el nuevo comentario
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            if (typeof showToast === 'function') {
+                                showToast(result.message || 'Error al agregar comentario', 'error');
                             }
                         }
                     } catch (error) {
-                        console.error('Error al cargar notas guardadas:', error);
-                        // No mostrar error al usuario ya que puede ser normal no tener notas guardadas
-                    }
-                }
-
-                // Event Listeners
-                document.addEventListener('DOMContentLoaded', function() {
-                    console.log('DOM cargado');
-                    
-                    // Cargar notas guardadas al inicializar
-                    loadSavedGrades();
-                    
-                    // Event listener para el botón de calcular
-                    const calculateBtn = document.getElementById('calculateBtn');
-                    if (calculateBtn) {
-                        calculateBtn.addEventListener('click', function() {
-                            console.log('Botón calcular clickeado');
-                            calculateMinimumGrades();
-                        });
-                    }
-                    
-                    // Actualizar cálculos cuando cambian las notas
-                    document.addEventListener('input', function(e) {
-                        if (e.target.classList.contains('grade-input')) {
-                            updateCalculations();
+                        console.error('Error:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Error al enviar el comentario', 'error');
                         }
-                    });
-                    
-                    // Envío de comentarios
-                    document.getElementById('commentForm').addEventListener('submit', async function(e) {
-                        e.preventDefault();
-                        
-                        const content = document.getElementById('commentContent').value.trim();
-                        if (!content) return;
-                        
-                        try {
-                            const response = await fetch('/evaluation-plans/' + planId + '/comments', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ content })
-                            });
-                            
-                            const result = await response.json();
-                            
-                            if (result.success) {
-                                if (typeof showToast === 'function') {
-                                    showToast('Comentario agregado exitosamente', 'success');
-                                }
-                                // Recargar la página para mostrar el nuevo comentario
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 1000);
-                            } else {
-                                if (typeof showToast === 'function') {
-                                    showToast(result.message || 'Error al agregar comentario', 'error');
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Error:', error);
-                            if (typeof showToast === 'function') {
-                                showToast('Error al enviar el comentario', 'error');
-                            }
-                        }
-                    });
+                    }
                 });
-                
-            } catch (error) {
-                console.error('Error en el script principal:', error);
-            }
-        </script>
-    `
-}) %> 
+            });
+            
+        } catch (error) {
+            console.error('Error en el script principal:', error);
+        }
+    </script>
+</body>
+</html> 
