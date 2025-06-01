@@ -111,7 +111,11 @@ const evaluationPlanSchema = new mongoose.Schema({
   metadata: {
     faculty: String,
     program: String,
-    campus: String
+    campus: String,
+    comments: {
+      type: Number,
+      default: 0
+    }
   },
   // ID único para evitar conflictos - SIEMPRE requerido
   versionId: {
@@ -215,10 +219,115 @@ evaluationPlanSchema.methods.approve = function(approvedBy) {
   return this.save();
 };
 
-// Método de instancia para incrementar contador de uso
-evaluationPlanSchema.methods.incrementUsage = function() {
-  this.usageCount += 1;
-  return this.save();
+// Método estático para encontrar o crear el plan principal
+evaluationPlanSchema.statics.findOrCreateMainVersion = async function(subjectCode, semester, groupNumber) {
+  try {
+    // Buscar todos los planes activos para este curso
+    const plans = await this.find({
+      subjectCode,
+      semester,
+      groupNumber,
+      isActive: true
+    });
+
+    if (!plans || plans.length === 0) {
+      return null;
+    }
+
+    // Añadir logging para depuración
+    console.log('Planes antes de ordenar:', plans.map(p => ({
+      id: p._id,
+      usos: p.usageCount,
+      comentarios: p.metadata?.comments || 0,
+      fecha: p.createdAt
+    })));
+
+    // Ordenar los planes según los criterios
+    plans.sort((a, b) => {
+      // Asegurar que los valores sean números
+      const aUsos = Number(a.usageCount || 0);
+      const bUsos = Number(b.usageCount || 0);
+      const aComentarios = Number(a.metadata?.comments || 0);
+      const bComentarios = Number(b.metadata?.comments || 0);
+
+      // Comparar por usos
+      if (bUsos !== aUsos) {
+        return bUsos - aUsos;
+      }
+      
+      // Si hay empate en usos, comparar por comentarios
+      if (bComentarios !== aComentarios) {
+        return bComentarios - aComentarios;
+      }
+      
+      // Si hay empate en comentarios, el más antiguo gana
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+
+    // Logging después de ordenar
+    console.log('Planes después de ordenar:', plans.map(p => ({
+      id: p._id,
+      usos: p.usageCount,
+      comentarios: p.metadata?.comments || 0,
+      fecha: p.createdAt,
+      esPrincipal: p.isMainVersion
+    })));
+
+    // El primer plan después del ordenamiento debería ser el principal
+    const shouldBeMain = plans[0];
+    
+    // Actualizar todos los planes para asegurar que solo uno sea principal
+    await this.updateMany(
+      {
+        subjectCode,
+        semester,
+        groupNumber,
+        isActive: true
+      },
+      {
+        $set: { 
+          isMainVersion: false,
+          versionName: 'Versión Alternativa'
+        }
+      }
+    );
+
+    // Establecer el nuevo plan principal
+    await this.findByIdAndUpdate(shouldBeMain._id, {
+      $set: { 
+        isMainVersion: true,
+        versionName: 'Plan Principal'
+      }
+    }, { new: true });
+
+    return shouldBeMain;
+  } catch (error) {
+    console.error('Error al actualizar plan principal:', error);
+    throw error;
+  }
+};
+
+// Método para incrementar el contador de uso y actualizar plan principal
+evaluationPlanSchema.methods.incrementUsage = async function() {
+  try {
+    // Incrementar el contador
+    this.usageCount = (this.usageCount || 0) + 1;
+    await this.save();
+
+    // Verificar y actualizar el plan principal
+    await this.constructor.findOrCreateMainVersion(
+      this.subjectCode,
+      this.semester,
+      this.groupNumber
+    );
+
+    // Recargar el documento para obtener el estado actualizado
+    await this.populate('parentPlanId');
+    return this;
+  } catch (error) {
+    console.error('Error al incrementar uso:', error);
+    throw error;
+  }
 };
 
 // Método estático para obtener todas las versiones de un curso
@@ -231,48 +340,50 @@ evaluationPlanSchema.statics.findAllVersionsByCourse = function(subjectCode, sem
   }).sort({ isMainVersion: -1, usageCount: -1, createdAt: 1 });
 };
 
-// Método estático para encontrar o crear el plan principal
-evaluationPlanSchema.statics.findOrCreateMainVersion = async function(subjectCode, semester, groupNumber, professorId) {
-  let mainPlan = await this.findOne({
-    subjectCode,
-    semester,
-    groupNumber,
-    isMainVersion: true,
-    isActive: true
-  });
-
-  if (!mainPlan) {
-    // Si no existe plan principal, el primer plan creado se convierte en principal
-    mainPlan = await this.findOne({
-      subjectCode,
-      semester,
-      groupNumber,
-      isActive: true
-    }).sort({ createdAt: 1 });
-
-    if (mainPlan) {
-      mainPlan.isMainVersion = true;
-      mainPlan.versionName = 'Plan Principal';
-      await mainPlan.save();
-    }
-  }
-
-  return mainPlan;
-};
-
 // Método estático para crear una nueva versión
 evaluationPlanSchema.statics.createVersion = async function(baseData, versionName = null, parentPlanId = null) {
+  // Asegurarse de que metadata.comments esté inicializado
+  const metadata = {
+    ...(baseData.metadata || {}),
+    comments: 0  // Inicializar comentarios en 0
+  };
+
   const newVersion = new this({
     ...baseData,
+    metadata,
     versionName: versionName || `Versión ${new Date().toLocaleDateString('es-ES')}`,
     parentPlanId,
     isMainVersion: false,
     isApproved: true,  // Auto-aprobar todas las versiones
     usageCount: 0
-    // versionId y createdTimestamp se generarán automáticamente en el middleware pre-save
   });
 
   return await newVersion.save();
+};
+
+// Método para incrementar comentarios
+evaluationPlanSchema.methods.incrementComments = async function() {
+  try {
+    // Asegurarse de que metadata existe
+    if (!this.metadata) {
+      this.metadata = {};
+    }
+    // Incrementar el contador de comentarios
+    this.metadata.comments = (this.metadata.comments || 0) + 1;
+    await this.save();
+
+    // Verificar y actualizar el plan principal
+    await this.constructor.findOrCreateMainVersion(
+      this.subjectCode,
+      this.semester,
+      this.groupNumber
+    );
+
+    return this;
+  } catch (error) {
+    console.error('Error al incrementar comentarios:', error);
+    throw error;
+  }
 };
 
 module.exports = mongoose.model('EvaluationPlan', evaluationPlanSchema); 
