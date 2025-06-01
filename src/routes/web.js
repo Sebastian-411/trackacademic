@@ -2317,7 +2317,7 @@ router.get('/create-evaluation-plan', requireAuth, async (req, res) => {
 router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans/version', requireAuth, async (req, res) => {
   try {
     const { subjectCode, semester, groupNumber } = req.params;
-    const { versionName, basePlanId } = req.body;
+    const { versionName, activities } = req.body;
 
     if (!versionName || versionName.trim().length === 0) {
       return res.status(400).json({
@@ -2326,46 +2326,40 @@ router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans/versi
       });
     }
 
+    if (!activities || !Array.isArray(activities) || activities.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe incluir al menos una actividad'
+      });
+    }
+
+    // Validar que los porcentajes sumen 100%
+    const totalPercentage = activities.reduce((sum, activity) => sum + activity.percentage, 0);
+    if (Math.abs(totalPercentage - 100) > 0.01) {
+      return res.status(400).json({
+        success: false,
+        message: 'La suma de los porcentajes debe ser exactamente 100%'
+      });
+    }
+
     const EvaluationPlan = require('../models/EvaluationPlan');
     
-    // Obtener datos base (desde plan existente o valores por defecto)
-    let baseData = {
+    // Preparar datos para crear la versión
+    const versionData = {
       semester,
       subjectCode: subjectCode.toUpperCase(),
       groupNumber: parseInt(groupNumber),
       professorId: req.session.user.id,
       academicYear: semester.split('-')[0], // Extraer el año del semestre (ej: "2023" de "2023-2")
-      activities: [],
+      activities,
       createdBy: req.session.user.id
     };
 
-    if (basePlanId) {
-      const basePlan = await EvaluationPlan.findById(basePlanId);
-      if (basePlan) {
-        baseData.activities = basePlan.activities.map(activity => ({
-          name: activity.name,
-          percentage: activity.percentage,
-          description: activity.description,
-          dueDate: activity.dueDate
-        }));
-        baseData.professorId = basePlan.professorId;
-      }
-    }
-
-    // Si no hay actividades, crear una actividad por defecto
-    if (baseData.activities.length === 0) {
-      baseData.activities = [{
-        name: 'Actividad 1',
-        percentage: 100,
-        description: 'Actividad de ejemplo - modifica según necesites'
-      }];
-    }
-
     // Crear nueva versión
     const newVersion = await EvaluationPlan.createVersion(
-      baseData,
+      versionData,
       versionName.trim(),
-      basePlanId || null
+      null // No hay plan padre específico
     );
 
     res.json({
@@ -2376,6 +2370,7 @@ router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans/versi
 
   } catch (error) {
     console.error('Error al crear versión:', error);
+    
     res.status(500).json({
       success: false,
       message: 'Error al crear la versión'

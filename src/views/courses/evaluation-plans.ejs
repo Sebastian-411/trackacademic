@@ -158,7 +158,7 @@
                                                             <a href="/evaluation-plans/${plan._id}" class="btn btn-outline-primary flex-fill">
                                                                 <i class="bi bi-eye me-1"></i>Ver
                                                             </a>
-                                                            <button onclick="copyVersion('${plan._id}')" class="btn btn-outline-secondary flex-fill">
+                                                            <button data-plan-id="${plan._id}" class="btn btn-outline-secondary flex-fill copy-version-btn">
                                                                 <i class="bi bi-copy me-1"></i>Copiar
                                                             </button>
                                                         </div>
@@ -271,11 +271,11 @@
 
 <!-- Modal para Crear Nueva Versión -->
 <div class="modal fade" id="createVersionModal" tabindex="-1" aria-labelledby="createVersionModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="createVersionModalLabel">
-                    <i class="bi bi-plus-circle me-2"></i>Crear Nueva Versión
+                    <i class="bi bi-plus-circle me-2"></i>Crear Nueva Versión del Plan
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -283,10 +283,10 @@
                 <div class="modal-body">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
-                        Puedes crear tu propia versión del plan de evaluación con actividades y porcentajes personalizados.
+                        Crea tu propia versión del plan de evaluación. Los porcentajes deben sumar exactamente <strong>100%</strong>.
                     </div>
                     
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="versionName" class="form-label">Nombre de la Versión *</label>
                         <input type="text" class="form-control" id="versionName" 
                                placeholder="Ej: Plan con los cambios de abril, Versión de Juan, etc."
@@ -294,7 +294,7 @@
                         <div class="form-text">Dale un nombre descriptivo para que otros puedan identificarla fácilmente.</div>
                     </div>
                     
-                    <div class="mb-3">
+                    <div class="mb-4" id="basePlanSection">
                         <label for="basePlan" class="form-label">Partir desde</label>
                         <select class="form-select" id="basePlan">
                             <option value="">Empezar desde cero</option>
@@ -304,10 +304,61 @@
                         </select>
                         <div class="form-text">Opcional: Selecciona un plan existente para copiar sus actividades como punto de partida.</div>
                     </div>
+
+                    <hr class="my-4">
+                    
+                    <h6 class="mb-3">Actividades del Plan</h6>
+                    
+                    <div id="versionActivitiesContainer">
+                        <div class="version-activity-item border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">Actividad 1</h6>
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-version-activity" style="display: none;">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nombre de la Actividad *</label>
+                                    <input type="text" class="form-control version-activity-name" placeholder="Ej: Parcial 1" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Porcentaje *</label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control version-activity-percentage" min="0" max="100" step="0.1" required>
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Fecha de Entrega</label>
+                                    <input type="date" class="form-control version-activity-date">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Descripción</label>
+                                    <input type="text" class="form-control version-activity-description" placeholder="Descripción opcional">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <button type="button" id="addVersionActivity" class="btn btn-outline-primary">
+                            <i class="bi bi-plus me-2"></i>Agregar Actividad
+                        </button>
+                        <div class="text-end">
+                            <small class="text-muted">Total: </small>
+                            <span id="versionTotalPercentage" class="fw-bold text-primary">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div id="versionPercentageAlert" class="alert alert-warning" style="display: none;">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        El total de porcentajes debe ser exactamente 100%.
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" id="createVersionBtn" class="btn btn-primary" disabled>
                         <i class="bi bi-plus-circle me-2"></i>Crear Versión
                     </button>
                 </div>
@@ -318,8 +369,109 @@
 
 <!-- Scripts específicos para esta página -->
 <script>
+console.log('🚀 SCRIPT INICIADO - JavaScript se está ejecutando');
+
+// Función básica de alerta para testing
+window.testBasic = function() {
+    alert('¡JavaScript funciona! El botón fue clickeado.');
+    console.log('Test básico ejecutado');
+};
+
+// Verificar que Bootstrap está disponible
+function checkBootstrap() {
+    console.log('Verificando Bootstrap...');
+    if (typeof bootstrap === 'undefined') {
+        console.error('❌ Bootstrap no está cargado!');
+        alert('Error: Bootstrap no está disponible. Recarga la página.');
+        return false;
+    }
+    console.log('✅ Bootstrap está disponible');
+    return true;
+}
+
+// Función de debugging mejorada
+function debugLog(message, data = null) {
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`[${timestamp}] 🔧 ${message}`, data || '');
+}
+
+// Test inmediato al cargar el script
+console.log('🔍 Verificando estado inicial...');
+console.log('- jQuery disponible:', typeof $ !== 'undefined');
+console.log('- Bootstrap disponible:', typeof bootstrap !== 'undefined');
+console.log('- Elementos del DOM:', {
+    createVersionModal: !!document.getElementById('createVersionModal'),
+    versionName: !!document.getElementById('versionName'),
+    basePlan: !!document.getElementById('basePlan')
+});
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📋 DOM CARGADO - Ejecutando inicialización');
+    debugLog('DOM Content Loaded - Iniciando aplicación');
+    
+    // Verificar Bootstrap nuevamente
+    if (!checkBootstrap()) {
+        console.error('Bootstrap no disponible después de DOM load');
+        return;
+    }
+    
+    debugLog('Aplicación inicializada correctamente');
+    
+    // === EVENT LISTENERS SIN CSP VIOLATIONS ===
+    
+    // Event listener para botones de test
+    document.addEventListener('click', function(e) {
+        const action = e.target.closest('[data-action]')?.getAttribute('data-action');
+        
+        if (action === 'test-basic') {
+            console.log('Test básico ejecutado');
+            alert('¡JavaScript funciona! El botón fue clickeado.');
+        } else if (action === 'test-direct') {
+            console.log('Test directo ejecutado');
+            alert('Test directo funciona!');
+        } else if (action === 'test-modal') {
+            console.log('Test modal ejecutado');
+            window.testModal();
+        } else if (action === 'view-existing-plan') {
+            console.log('Ver plan existente ejecutado');
+            // Función para ver el plan existente
+            const modal = bootstrap.Modal.getInstance(document.getElementById('duplicatePlanModal'));
+            if (modal) modal.hide();
+            
+            // Buscar el primer plan en la página y hacer scroll hacia él
+            const firstPlan = document.querySelector('[href^="/evaluation-plans/"]');
+            if (firstPlan) {
+                firstPlan.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                
+                // Agregar efecto de resaltado temporal
+                const planCard = firstPlan.closest('.card');
+                if (planCard) {
+                    planCard.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.5)';
+                    planCard.style.transition = 'box-shadow 0.3s ease';
+                    
+                    setTimeout(() => {
+                        planCard.style.boxShadow = '';
+                    }, 3000);
+                }
+            }
+        }
+    });
+    
+    // Event listener para botones de copiar versión
+    document.addEventListener('click', function(e) {
+        const copyBtn = e.target.closest('.copy-version-btn');
+        if (copyBtn) {
+            e.preventDefault();
+            const planId = copyBtn.getAttribute('data-plan-id');
+            console.log('Botón copiar clickeado - Plan ID:', planId);
+            window.copyVersion(planId);
+        }
+    });
+    
+    console.log('✅ Event listeners configurados correctamente');
+    
     let activityCount = 1;
+    let versionActivityCount = 1;
 
     function addActivity() {
         activityCount++;
@@ -356,23 +508,85 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         container.insertAdjacentHTML('beforeend', activityHtml);
-        updateRemoveButtons();
         updateTotalPercentage();
+        
+        // Mostrar botones de eliminar si hay más de una actividad
+        const removeButtons = container.querySelectorAll('.remove-activity');
+        removeButtons.forEach(btn => btn.style.display = removeButtons.length > 1 ? 'block' : 'none');
+    }
+
+    function addVersionActivity() {
+        versionActivityCount++;
+        const container = document.getElementById('versionActivitiesContainer');
+        const activityHtml = `
+            <div class="version-activity-item border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Actividad ${versionActivityCount}</h6>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-version-activity">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre de la Actividad *</label>
+                        <input type="text" class="form-control version-activity-name" placeholder="Ej: Parcial ${versionActivityCount}" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Porcentaje *</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control version-activity-percentage" min="0" max="100" step="0.1" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Fecha de Entrega</label>
+                        <input type="date" class="form-control version-activity-date">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Descripción</label>
+                        <input type="text" class="form-control version-activity-description" placeholder="Descripción opcional">
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', activityHtml);
+        updateVersionTotalPercentage();
+        
+        // Mostrar botones de eliminar si hay más de una actividad
+        const removeButtons = container.querySelectorAll('.remove-version-activity');
+        removeButtons.forEach(btn => btn.style.display = removeButtons.length > 1 ? 'block' : 'none');
     }
 
     function removeActivity(button) {
-        button.closest('.activity-item').remove();
-        updateRemoveButtons();
+        const container = document.getElementById('activitiesContainer');
+        const activityItem = button.closest('.activity-item');
+        const activityItems = container.querySelectorAll('.activity-item');
+        
+        if (activityItems.length > 1) {
+            activityItem.remove();
         updateTotalPercentage();
+            
+            // Ocultar botones de eliminar si solo queda una actividad
+            const remainingItems = container.querySelectorAll('.activity-item');
+            const removeButtons = container.querySelectorAll('.remove-activity');
+            removeButtons.forEach(btn => btn.style.display = remainingItems.length > 1 ? 'block' : 'none');
+        }
     }
 
-    function updateRemoveButtons() {
-        const activities = document.querySelectorAll('.activity-item');
-        const removeButtons = document.querySelectorAll('.remove-activity');
+    function removeVersionActivity(button) {
+        const container = document.getElementById('versionActivitiesContainer');
+        const activityItem = button.closest('.version-activity-item');
+        const activityItems = container.querySelectorAll('.version-activity-item');
         
-        removeButtons.forEach(btn => {
-            btn.style.display = activities.length > 1 ? 'inline-block' : 'none';
-        });
+        if (activityItems.length > 1) {
+            activityItem.remove();
+            updateVersionTotalPercentage();
+            
+            // Ocultar botones de eliminar si solo queda una actividad
+            const remainingItems = container.querySelectorAll('.version-activity-item');
+            const removeButtons = container.querySelectorAll('.remove-version-activity');
+            removeButtons.forEach(btn => btn.style.display = remainingItems.length > 1 ? 'block' : 'none');
+        }
     }
 
     function updateTotalPercentage() {
@@ -385,22 +599,145 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         const totalElement = document.getElementById('totalPercentage');
-        const alert = document.getElementById('percentageAlert');
-        const createBtn = document.getElementById('createPlanBtn');
+        const alertElement = document.getElementById('percentageAlert');
+        const submitButton = document.getElementById('createPlanBtn');
         
-        if (totalElement) {
-            totalElement.textContent = total.toFixed(1) + '%';
-            
-            if (Math.abs(total - 100) < 0.1) {
-                totalElement.className = 'fw-bold text-success';
-                if (alert) alert.style.display = 'none';
-                if (createBtn) createBtn.disabled = false;
-            } else {
-                totalElement.className = 'fw-bold text-danger';
-                if (alert) alert.style.display = 'block';
-                if (createBtn) createBtn.disabled = true;
-            }
+        if (totalElement) totalElement.textContent = total.toFixed(1) + '%';
+        
+        // Validar porcentaje total
+        const isValid = Math.abs(total - 100) < 0.01;
+        
+        if (alertElement) {
+            alertElement.style.display = total > 0 && !isValid ? 'block' : 'none';
         }
+        
+        if (submitButton) {
+            submitButton.disabled = !isValid || total === 0;
+        }
+    }
+
+    function updateVersionTotalPercentage() {
+        const percentageInputs = document.querySelectorAll('.version-activity-percentage');
+        let total = 0;
+        
+        percentageInputs.forEach(input => {
+            const value = parseFloat(input.value) || 0;
+            total += value;
+        });
+        
+        const totalElement = document.getElementById('versionTotalPercentage');
+        const alertElement = document.getElementById('versionPercentageAlert');
+        const submitButton = document.getElementById('createVersionBtn');
+        
+        if (totalElement) totalElement.textContent = total.toFixed(1) + '%';
+        
+        // Validar porcentaje total
+        const isValid = Math.abs(total - 100) < 0.01;
+        
+        if (alertElement) {
+            alertElement.style.display = total > 0 && !isValid ? 'block' : 'none';
+        }
+        
+        if (submitButton) {
+            submitButton.disabled = !isValid || total === 0;
+        }
+    }
+
+    // Función para cargar actividades de un plan base
+    function loadBasePlanActivities(planId) {
+        if (!planId) {
+            // Limpiar y resetear a actividad por defecto
+            const container = document.getElementById('versionActivitiesContainer');
+            container.innerHTML = `
+                <div class="version-activity-item border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Actividad 1</h6>
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-version-activity" style="display: none;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nombre de la Actividad *</label>
+                            <input type="text" class="form-control version-activity-name" placeholder="Ej: Parcial 1" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Porcentaje *</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control version-activity-percentage" min="0" max="100" step="0.1" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha de Entrega</label>
+                            <input type="date" class="form-control version-activity-date">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" class="form-control version-activity-description" placeholder="Descripción opcional">
+                        </div>
+                    </div>
+                </div>
+            `;
+            versionActivityCount = 1;
+            updateVersionTotalPercentage();
+            return;
+        }
+
+        // Obtener datos del plan
+        fetch(`/api/evaluation-plans/${planId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.plan.activities.length > 0) {
+                    const container = document.getElementById('versionActivitiesContainer');
+                    container.innerHTML = '';
+                    versionActivityCount = 0;
+
+                    data.plan.activities.forEach((activity, index) => {
+                        versionActivityCount++;
+                        const activityHtml = `
+                            <div class="version-activity-item border rounded p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">Actividad ${index + 1}</h6>
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-version-activity" style="display: ${data.plan.activities.length > 1 ? 'block' : 'none'};">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Nombre de la Actividad *</label>
+                                        <input type="text" class="form-control version-activity-name" placeholder="Ej: Parcial ${index + 1}" value="${activity.name || ''}" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Porcentaje *</label>
+                                        <div class="input-group">
+                                            <input type="number" class="form-control version-activity-percentage" min="0" max="100" step="0.1" value="${activity.percentage || ''}" required>
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Fecha de Entrega</label>
+                                        <input type="date" class="form-control version-activity-date" value="${activity.dueDate ? activity.dueDate.split('T')[0] : ''}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Descripción</label>
+                                        <input type="text" class="form-control version-activity-description" placeholder="Descripción opcional" value="${activity.description || ''}">
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.insertAdjacentHTML('beforeend', activityHtml);
+                    });
+                    
+                    updateVersionTotalPercentage();
+                } else {
+                    showToast('Error al cargar las actividades del plan base', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Error al cargar datos del plan', 'error');
+            });
     }
 
     function useThisPlan(planId) {
@@ -433,39 +770,213 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = `/evaluation-plans/${planId}/calculator`;
     }
     
-    function copyVersion(planId) {
-        console.log('Copiando versión:', planId);
+    // Función de test para verificar que el modal funciona (GLOBAL)
+    window.testModal = function() {
+        console.log('=== TESTING MODAL ===');
+        const modalElement = document.getElementById('createVersionModal');
+        
+        if (!modalElement) {
+            console.log('❌ Modal element no encontrado');
+            alert('Error: Modal no encontrado');
+            return;
+        }
+        
+        if (!checkBootstrap()) {
+            alert('Bootstrap no está disponible');
+            return;
+        }
+        
+        try {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            console.log('✅ Test modal exitoso');
+            alert('Modal de test abierto correctamente');
+        } catch (error) {
+            console.log('❌ Error en test modal', error);
+            alert('Error en test modal: ' + error.message);
+        }
+    };
+
+    // Función copyVersion (GLOBAL)
+    window.copyVersion = function(planId) {
+        console.log('=== INICIANDO COPY VERSION ===');
+        console.log('Plan ID recibido:', planId, 'tipo:', typeof planId);
+        
+        if (!planId) {
+            console.log('❌ Plan ID es null o undefined');
+            alert('Error: ID de plan no válido');
+            return;
+        }
+        
+        console.log('Iniciando fetch para obtener datos del plan');
+        
         // Obtener datos del plan a copiar
         fetch(`/api/evaluation-plans/${planId}`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('Respuesta recibida - Status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return response.json();
+            })
             .then(data => {
-                console.log('Respuesta del servidor:', data);
+                console.log('Datos del plan obtenidos:', data);
+                
                 if (data.success) {
+                    console.log('✅ Plan encontrado exitosamente:', data.plan.versionName);
+                    
+                    // Verificar que existen los elementos del DOM
+                    const versionNameInput = document.getElementById('versionName');
+                    const basePlanSelect = document.getElementById('basePlan');
+                    const modalElement = document.getElementById('createVersionModal');
+                    
+                    console.log('Elementos del DOM:', {
+                        versionNameInput: !!versionNameInput,
+                        basePlanSelect: !!basePlanSelect,
+                        modalElement: !!modalElement
+                    });
+                    
+                    if (!versionNameInput || !basePlanSelect || !modalElement) {
+                        console.log('❌ Elementos del modal no encontrados en el DOM');
+                        alert('Error: Modal no encontrado en la página');
+                        return;
+                    }
+                    
                     // Prellenar el modal con datos del plan
-                    document.getElementById('versionName').value = `Copia de ${data.plan.versionName}`;
-                    document.getElementById('basePlan').value = planId;
+                    const newVersionName = `Copia de ${data.plan.versionName}`;
+                    versionNameInput.value = newVersionName;
+                    basePlanSelect.value = planId;
+                    
+                    console.log('✅ Campos prellenados:', { 
+                        versionName: newVersionName, 
+                        basePlan: planId 
+                    });
+                    
+                    // Ocultar la sección "Partir desde" ya que estamos copiando un plan específico
+                    const basePlanSection = document.getElementById('basePlanSection');
+                    if (basePlanSection) {
+                        basePlanSection.style.display = 'none';
+                        console.log('✅ Sección "Partir desde" ocultada');
+                    }
+                    
+                    // Cargar las actividades del plan base
+                    loadBasePlanActivities(planId);
+                    console.log('✅ Cargando actividades del plan base');
                     
                     // Mostrar modal
-                    const modal = new bootstrap.Modal(document.getElementById('createVersionModal'));
+                    console.log('Intentando mostrar modal...');
+                    try {
+                        if (!checkBootstrap()) {
+                            throw new Error('Bootstrap no está disponible');
+                        }
+                        
+                        const modal = new bootstrap.Modal(modalElement);
                     modal.show();
+                        console.log('✅ Modal mostrado exitosamente');
+                        
+                    } catch (modalError) {
+                        console.log('❌ Error al mostrar modal:', modalError);
+                        alert('Error al abrir el modal: ' + modalError.message);
+                    }
                 } else {
-                    showToast('Error al obtener datos del plan', 'error');
+                    console.log('❌ Error en respuesta del servidor:', data.message);
+                    alert('Error al obtener datos del plan: ' + (data.message || 'Error desconocido'));
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                showToast('Error al copiar la versión', 'error');
+                console.log('❌ Error completo en copyVersion:', error);
+                alert('Error al copiar la versión: ' + error.message);
             });
+        
+        console.log('=== FIN COPY VERSION ===');
+    };
+
+    // Inicializar modal de versión cuando se abra
+    const createVersionModal = document.getElementById('createVersionModal');
+    if (createVersionModal) {
+        createVersionModal.addEventListener('shown.bs.modal', function() {
+            // Asegurar que hay al menos una actividad y que el selector de plan base funciona
+            const basePlanValue = document.getElementById('basePlan').value;
+            if (!basePlanValue) {
+                // Si no hay plan base seleccionado, asegurar que hay una actividad por defecto
+                const container = document.getElementById('versionActivitiesContainer');
+                if (container.children.length === 0) {
+                    versionActivityCount = 0;
+                    addVersionActivity();
+                }
+            }
+            updateVersionTotalPercentage();
+        });
+
+        // Limpiar modal cuando se cierre
+        createVersionModal.addEventListener('hidden.bs.modal', function() {
+            // Resetear formulario
+            document.getElementById('versionName').value = '';
+            document.getElementById('basePlan').value = '';
+            
+            // Restaurar la visibilidad de la sección "Partir desde"
+            const basePlanSection = document.getElementById('basePlanSection');
+            if (basePlanSection) {
+                basePlanSection.style.display = 'block';
+                console.log('✅ Sección "Partir desde" restaurada');
+            }
+            
+            // Resetear actividades a una por defecto
+            const container = document.getElementById('versionActivitiesContainer');
+            container.innerHTML = `
+                <div class="version-activity-item border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Actividad 1</h6>
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-version-activity" style="display: none;">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Nombre de la Actividad *</label>
+                            <input type="text" class="form-control version-activity-name" placeholder="Ej: Parcial 1" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Porcentaje *</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control version-activity-percentage" min="0" max="100" step="0.1" required>
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha de Entrega</label>
+                            <input type="date" class="form-control version-activity-date">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Descripción</label>
+                            <input type="text" class="form-control version-activity-description" placeholder="Descripción opcional">
+                        </div>
+                    </div>
+                </div>
+            `;
+            versionActivityCount = 1;
+            updateVersionTotalPercentage();
+        });
     }
 
     // Función auxiliar para mostrar toasts
-    function showToast(message, type) {
+    function showToast(message, type = 'info') {
+        console.log('Mostrando toast:', { message, type });
+        
+        // Remover toasts anteriores
+        const existingToasts = document.querySelectorAll('.toast-container');
+        existingToasts.forEach(toast => toast.remove());
+        
         const toastHtml = `
             <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 11000;">
-                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header">
-                        <strong class="me-auto">${type === 'success' ? 'Éxito' : 'Error'}</strong>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+                    <div class="toast-header ${type === 'success' ? 'bg-success text-white' : type === 'error' ? 'bg-danger text-white' : 'bg-info text-white'}">
+                        <strong class="me-auto">
+                            ${type === 'success' ? '✅ Éxito' : type === 'error' ? '❌ Error' : 'ℹ️ Información'}
+                        </strong>
+                        <button type="button" class="btn-close ${type === 'error' || type === 'success' ? 'btn-close-white' : ''}" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
                     <div class="toast-body">
                         ${message}
@@ -475,13 +986,16 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         document.body.insertAdjacentHTML('beforeend', toastHtml);
+        console.log('Toast agregado al DOM');
         
+        // Auto-remover después de 8 segundos para errores, 5 para éxito
         setTimeout(() => {
             const toastElement = document.querySelector('.toast-container:last-child');
             if (toastElement) {
                 toastElement.remove();
+                console.log('Toast removido automáticamente');
             }
-        }, 5000);
+        }, type === 'error' ? 8000 : 5000);
     }
     
     // Función para mostrar modal cuando ya existe un plan
@@ -505,7 +1019,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <strong>¿Qué te gustaría hacer?</strong>
                             </p>
                             <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-primary" onclick="viewExistingPlan()">
+                                <button type="button" class="btn btn-primary" data-action="view-existing-plan">
                                     <i class="bi bi-eye me-2"></i>Ver Plan Existente
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
@@ -533,40 +1047,25 @@ document.addEventListener('DOMContentLoaded', function() {
             this.remove();
         });
     }
-    
-    // Función para ver el plan existente
-    function viewExistingPlan() {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('duplicatePlanModal'));
-        if (modal) modal.hide();
-        
-        // Buscar el primer plan en la página y hacer scroll hacia él
-        const firstPlan = document.querySelector('[href^="/evaluation-plans/"]');
-        if (firstPlan) {
-            firstPlan.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Agregar efecto de resaltado temporal
-            const planCard = firstPlan.closest('.card');
-            if (planCard) {
-                planCard.style.boxShadow = '0 0 0 3px rgba(13, 110, 253, 0.5)';
-                planCard.style.transition = 'box-shadow 0.3s ease';
-                
-                setTimeout(() => {
-                    planCard.style.boxShadow = '';
-                }, 3000);
-            }
-        }
-    }
 
     // Event Listeners
     const addActivityBtn = document.getElementById('addActivity');
     if (addActivityBtn) {
         addActivityBtn.addEventListener('click', addActivity);
     }
+
+    const addVersionActivityBtn = document.getElementById('addVersionActivity');
+    if (addVersionActivityBtn) {
+        addVersionActivityBtn.addEventListener('click', addVersionActivity);
+    }
     
     // Remover actividad
     document.addEventListener('click', function(e) {
         if (e.target.closest('.remove-activity')) {
             removeActivity(e.target.closest('.remove-activity'));
+        }
+        if (e.target.closest('.remove-version-activity')) {
+            removeVersionActivity(e.target.closest('.remove-version-activity'));
         }
     });
     
@@ -575,7 +1074,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.classList.contains('activity-percentage')) {
             updateTotalPercentage();
         }
+        if (e.target.classList.contains('version-activity-percentage')) {
+            updateVersionTotalPercentage();
+        }
     });
+
+    // Listener para cambio en el selector de plan base
+    const basePlanSelect = document.getElementById('basePlan');
+    if (basePlanSelect) {
+        basePlanSelect.addEventListener('change', function(e) {
+            loadBasePlanActivities(e.target.value);
+        });
+    }
     
     // Enviar formulario
     const createPlanForm = document.getElementById('createPlanForm');
@@ -655,12 +1165,41 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const versionName = document.getElementById('versionName').value.trim();
-            const basePlanId = document.getElementById('basePlan').value;
-            
-            console.log('Creando versión:', { versionName, basePlanId });
             
             if (!versionName) {
                 showToast('El nombre de la versión es requerido', 'error');
+                return;
+            }
+
+            // Recoger actividades del formulario
+            const activities = [];
+            const activityItems = document.querySelectorAll('.version-activity-item');
+            
+            activityItems.forEach(item => {
+                const name = item.querySelector('.version-activity-name').value;
+                const percentage = parseFloat(item.querySelector('.version-activity-percentage').value);
+                const date = item.querySelector('.version-activity-date').value;
+                const description = item.querySelector('.version-activity-description').value;
+                
+                if (name && percentage) {
+                    activities.push({
+                        name,
+                        percentage,
+                        dueDate: date || null,
+                        description
+                    });
+                }
+            });
+
+            if (activities.length === 0) {
+                showToast('Debes agregar al menos una actividad', 'error');
+                return;
+            }
+
+            // Validar que los porcentajes sumen 100%
+            const totalPercentage = activities.reduce((sum, activity) => sum + activity.percentage, 0);
+            if (Math.abs(totalPercentage - 100) > 0.01) {
+                showToast('Los porcentajes deben sumar exactamente 100%', 'error');
                 return;
             }
             
@@ -670,8 +1209,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const semester = pathParts[3];  
                 const groupNumber = pathParts[4];
                 
-                console.log('Datos del curso:', { courseCode, semester, groupNumber });
-                
                 const response = await fetch(`/courses/${courseCode}/${semester}/${groupNumber}/evaluation-plans/version`, {
                     method: 'POST',
                     headers: {
@@ -679,13 +1216,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     body: JSON.stringify({ 
                         versionName,
-                        basePlanId: basePlanId || null
+                        activities
                     })
                 });
                 
-                console.log('Respuesta del servidor:', response.status);
                 const result = await response.json();
-                console.log('Resultado:', result);
                 
                 if (result.success) {
                     showToast('Versión creada exitosamente', 'success');

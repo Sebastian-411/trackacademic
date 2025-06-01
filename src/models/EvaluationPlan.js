@@ -112,6 +112,21 @@ const evaluationPlanSchema = new mongoose.Schema({
     faculty: String,
     program: String,
     campus: String
+  },
+  // ID único para evitar conflictos - SIEMPRE requerido
+  versionId: {
+    type: String,
+    required: true,
+    unique: true,
+    default: function() {
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substr(2, 8);
+      return `${this.subjectCode || 'COURSE'}_${this.semester || 'SEMESTER'}_${this.groupNumber || 1}_${timestamp}_${randomId}`;
+    }
+  },
+  createdTimestamp: {
+    type: Number,
+    default: Date.now
   }
 }, {
   timestamps: true,
@@ -122,13 +137,20 @@ const evaluationPlanSchema = new mongoose.Schema({
 // Índices compuestos para mejorar rendimiento
 // Solo el plan principal debe ser único por curso
 evaluationPlanSchema.index(
+  { semester: 1, subjectCode: 1, groupNumber: 1 }, 
+  { sparse: true }
+);
+
+// Índice único para el plan principal
+evaluationPlanSchema.index(
   { semester: 1, subjectCode: 1, groupNumber: 1, isMainVersion: 1 }, 
   { 
-    unique: true, 
-    partialFilterExpression: { isMainVersion: true } 
+    unique: true,
+    partialFilterExpression: { isMainVersion: true }
   }
 );
-evaluationPlanSchema.index({ semester: 1, subjectCode: 1, groupNumber: 1 });
+
+// Otros índices para optimización
 evaluationPlanSchema.index({ professorId: 1, semester: 1 });
 evaluationPlanSchema.index({ createdBy: 1 });
 evaluationPlanSchema.index({ isApproved: 1, isActive: 1 });
@@ -145,11 +167,25 @@ evaluationPlanSchema.virtual('isComplete').get(function() {
   return this.activities.every(activity => activity.isCompleted);
 });
 
-// Middleware pre-save para calcular año académico automáticamente
+// Middleware pre-save para calcular año académico automáticamente y generar versionId
 evaluationPlanSchema.pre('save', function(next) {
+  // Calcular año académico
   if (this.semester && !this.academicYear) {
     this.academicYear = this.semester.split('-')[0];
   }
+  
+  // Generar versionId único si no existe
+  if (!this.versionId) {
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substr(2, 8);
+    this.versionId = `${this.subjectCode}_${this.semester}_${this.groupNumber}_${timestamp}_${randomId}`;
+  }
+  
+  // Asegurar que createdTimestamp esté establecido
+  if (!this.createdTimestamp) {
+    this.createdTimestamp = Date.now();
+  }
+  
   next();
 });
 
@@ -233,9 +269,10 @@ evaluationPlanSchema.statics.createVersion = async function(baseData, versionNam
     isMainVersion: false,
     isApproved: true,  // Auto-aprobar todas las versiones
     usageCount: 0
+    // versionId y createdTimestamp se generarán automáticamente en el middleware pre-save
   });
 
-  return newVersion.save();
+  return await newVersion.save();
 };
 
 module.exports = mongoose.model('EvaluationPlan', evaluationPlanSchema); 
