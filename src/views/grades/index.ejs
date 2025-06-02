@@ -280,30 +280,99 @@
             </div>
         </div>
 
-        <!-- Grade Chart (if there are grades) -->
+        <!-- Analytics Dashboard (if there are grades) -->
         <% if (grades && grades.length > 0) { %>
+            <!-- Performance Overview -->
             <div class="row mt-4">
-                <div class="col-lg-8">
+                <div class="col-12">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="card-title mb-0">
-                                <i class="bi bi-bar-chart me-2"></i>Evolución de Calificaciones
+                                <i class="bi bi-graph-up me-2"></i>Análisis de Rendimiento Académico
                             </h5>
                         </div>
                         <div class="card-body">
-                            <canvas id="gradesChart" height="100"></canvas>
+                            <div class="row" id="performanceAnalysis">
+                                <!-- Se generará dinámicamente con JavaScript -->
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-4">
-                    <div class="card">
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row mt-4">
+                <!-- Rendimiento por Semestre -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
                         <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-pie-chart me-2"></i>Estado de Materias
-                            </h5>
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-calendar-week me-2"></i>Progreso por Semestre
+                            </h6>
                         </div>
                         <div class="card-body">
-                            <canvas id="statusChart" height="100"></canvas>
+                            <canvas id="semesterChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Distribución de Notas -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-bar-chart-steps me-2"></i>Distribución de Notas
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="distributionChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts and Recommendations Row -->
+            <div class="row">
+                <!-- Materias en Riesgo -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>Alertas Académicas
+                            </h6>
+                        </div>
+                        <div class="card-body" id="riskAlerts">
+                            <!-- Se generará dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recomendaciones -->
+                <div class="col-lg-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-lightbulb me-2"></i>Recomendaciones Personalizadas
+                            </h6>
+                        </div>
+                        <div class="card-body" id="recommendations">
+                            <!-- Se generará dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Radar Chart -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-radar me-2"></i>Radar de Rendimiento por Materia
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="radarChart" height="400"></canvas>
                         </div>
                     </div>
                 </div>
@@ -364,25 +433,217 @@
         });
 
         function initCharts() {
-            // Gráfico de evolución de calificaciones
-            const ctx1 = document.getElementById('gradesChart').getContext('2d');
+            // Generar análisis de rendimiento
+            generatePerformanceAnalysis();
             
-            new Chart(ctx1, {
-                type: 'bar',
+            // Generar alertas y recomendaciones
+            generateAlertsAndRecommendations();
+            
+            // Gráfico de progreso por semestre
+            initSemesterChart();
+            
+            // Gráfico de distribución de notas
+            initDistributionChart();
+            
+            // Gráfico radar de rendimiento
+            initRadarChart();
+        }
+
+        function generatePerformanceAnalysis() {
+            const analysisContainer = document.getElementById('performanceAnalysis');
+            
+            // Calcular métricas avanzadas
+            const totalGrades = gradesData.length;
+            const completedGrades = gradesData.filter(g => g.finalGrade !== null && g.finalGrade !== undefined).length;
+            const inProgressGrades = gradesData.filter(g => g.currentGrade > 0 && (g.finalGrade === null || g.finalGrade === undefined)).length;
+            const notStartedGrades = gradesData.filter(g => g.currentGrade === 0).length;
+            
+            const averageGrade = gradesData.reduce((sum, g) => sum + (g.currentGrade || 0), 0) / totalGrades;
+            const highPerforming = gradesData.filter(g => g.currentGrade >= 4.0).length;
+            const atRisk = gradesData.filter(g => g.currentGrade > 0 && g.currentGrade < 3.0).length;
+            
+            // Tendencia (simulada - en un caso real se calcularía con datos históricos)
+            const trend = averageGrade >= 3.5 ? 'positive' : averageGrade >= 3.0 ? 'stable' : 'negative';
+            const trendIcon = trend === 'positive' ? 'bi-trend-up text-success' : 
+                            trend === 'stable' ? 'bi-dash-circle text-warning' : 'bi-trend-down text-danger';
+            const trendText = trend === 'positive' ? 'Tendencia Positiva' : 
+                            trend === 'stable' ? 'Tendencia Estable' : 'Tendencia Preocupante';
+            
+            analysisContainer.innerHTML = `
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="display-6 fw-bold text-primary">${averageGrade.toFixed(2)}</div>
+                        <small class="text-muted">Promedio General</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="display-6 fw-bold text-success">${highPerforming}</div>
+                        <small class="text-muted">Materias Sobresalientes</small>
+                        <div class="small text-success">≥ 4.0</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="display-6 fw-bold text-danger">${atRisk}</div>
+                        <small class="text-muted">Materias en Riesgo</small>
+                        <div class="small text-danger">< 3.0</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <i class="bi ${trendIcon}" style="font-size: 2rem;"></i>
+                        <div class="fw-bold">${trendText}</div>
+                        <small class="text-muted">Evolución Académica</small>
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateAlertsAndRecommendations() {
+            // Generar alertas
+            const riskContainer = document.getElementById('riskAlerts');
+            const atRiskSubjects = gradesData.filter(g => g.currentGrade > 0 && g.currentGrade < 3.0);
+            const notStartedSubjects = gradesData.filter(g => g.currentGrade === 0);
+            
+            let alertsHTML = '';
+            
+            if (atRiskSubjects.length > 0) {
+                alertsHTML += `
+                    <div class="alert alert-danger">
+                        <h6><i class="bi bi-exclamation-triangle me-2"></i>Materias en Riesgo (${atRiskSubjects.length})</h6>
+                        <ul class="mb-0">
+                            ${atRiskSubjects.map(subject => 
+                                `<li><strong>${subject.subjectCode}</strong>: ${subject.currentGrade.toFixed(2)} - Necesitas mejorar urgentemente</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (notStartedSubjects.length > 0) {
+                alertsHTML += `
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-clock me-2"></i>Sin Actividad (${notStartedSubjects.length})</h6>
+                        <ul class="mb-0">
+                            ${notStartedSubjects.map(subject => 
+                                `<li><strong>${subject.subjectCode}</strong>: No has registrado calificaciones</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (alertsHTML === '') {
+                alertsHTML = `
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>¡Excelente!</strong> No tienes materias en riesgo crítico.
+                    </div>
+                `;
+            }
+            
+            riskContainer.innerHTML = alertsHTML;
+            
+            // Generar recomendaciones
+            const recommendationsContainer = document.getElementById('recommendations');
+            const averageGrade = gradesData.reduce((sum, g) => sum + (g.currentGrade || 0), 0) / gradesData.length;
+            const completedActivities = gradesData.reduce((sum, g) => {
+                const completed = g.activities ? g.activities.filter(a => a.score !== null).length : 0;
+                return sum + completed;
+            }, 0);
+            
+            let recommendations = [];
+            
+            if (averageGrade < 3.0) {
+                recommendations.push({
+                    icon: 'bi-book',
+                    title: 'Refuerza tu Estudio',
+                    description: 'Tu promedio está por debajo de 3.0. Considera crear un plan de estudio más estructurado.'
+                });
+            }
+            
+            if (atRiskSubjects.length > 0) {
+                recommendations.push({
+                    icon: 'bi-person-raised-hand',
+                    title: 'Busca Ayuda Académica',
+                    description: 'Tienes materias en riesgo. Considera buscar tutorías o asesorías académicas.'
+                });
+            }
+            
+            if (notStartedSubjects.length > 0) {
+                recommendations.push({
+                    icon: 'bi-calendar-check',
+                    title: 'Organiza tu Tiempo',
+                    description: 'Tienes materias sin actividad. Crea un cronograma para ponerte al día.'
+                });
+            }
+            
+            if (averageGrade >= 4.0) {
+                recommendations.push({
+                    icon: 'bi-trophy',
+                    title: 'Mantén la Excelencia',
+                    description: '¡Excelente rendimiento! Considera ayudar a compañeros o explorar actividades avanzadas.'
+                });
+            } else if (averageGrade >= 3.5) {
+                recommendations.push({
+                    icon: 'bi-arrow-up',
+                    title: 'Sigue Mejorando',
+                    description: 'Buen rendimiento general. Un pequeño esfuerzo extra te llevará a la excelencia.'
+                });
+            }
+            
+            if (recommendations.length === 0) {
+                recommendations.push({
+                    icon: 'bi-check-circle',
+                    title: 'Buen Trabajo',
+                    description: 'Mantén tu ritmo de estudio actual y sigue monitoreando tu progreso.'
+                });
+            }
+            
+            const recommendationsHTML = recommendations.map(rec => `
+                <div class="d-flex align-items-start mb-3">
+                    <i class="bi ${rec.icon} text-primary me-3 mt-1" style="font-size: 1.2rem;"></i>
+                    <div>
+                        <h6 class="mb-1">${rec.title}</h6>
+                        <p class="text-muted mb-0">${rec.description}</p>
+                    </div>
+                </div>
+            `).join('');
+            
+            recommendationsContainer.innerHTML = recommendationsHTML;
+        }
+
+        function initSemesterChart() {
+            const ctx = document.getElementById('semesterChart').getContext('2d');
+            
+            // Agrupar por semestre
+            const semesterData = {};
+            gradesData.forEach(grade => {
+                const sem = grade.semester;
+                if (!semesterData[sem]) {
+                    semesterData[sem] = { total: 0, count: 0, grades: [] };
+                }
+                semesterData[sem].total += grade.currentGrade || 0;
+                semesterData[sem].count++;
+                semesterData[sem].grades.push(grade.currentGrade || 0);
+            });
+            
+            const semesters = Object.keys(semesterData).sort();
+            const averages = semesters.map(sem => semesterData[sem].total / semesterData[sem].count);
+            
+            new Chart(ctx, {
+                type: 'line',
                 data: {
-                    labels: gradesData.map(g => g.subjectCode),
+                    labels: semesters,
                     datasets: [{
-                        label: 'Nota Actual',
-                        data: gradesData.map(g => g.currentGrade || 0),
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        label: 'Promedio por Semestre',
+                        data: averages,
                         borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: 'Nota Final',
-                        data: gradesData.map(g => g.finalGrade || null),
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
                     }]
                 },
                 options: {
@@ -399,25 +660,47 @@
                     },
                     plugins: {
                         legend: {
-                            position: 'top'
+                            display: false
                         }
                     }
                 }
             });
+        }
 
-            // Gráfico de estado de materias
-            const completed = statsData.completedSubjects || 0;
-            const inProgress = (statsData.totalSubjects || 0) - completed;
+        function initDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
             
-            const ctx2 = document.getElementById('statusChart').getContext('2d');
+            // Crear rangos de distribución
+            const ranges = {
+                'Excelente (4.5-5.0)': 0,
+                'Bueno (4.0-4.4)': 0,
+                'Satisfactorio (3.5-3.9)': 0,
+                'Aceptable (3.0-3.4)': 0,
+                'Insuficiente (< 3.0)': 0
+            };
             
-            new Chart(ctx2, {
+            gradesData.forEach(grade => {
+                const g = grade.currentGrade || 0;
+                if (g >= 4.5) ranges['Excelente (4.5-5.0)']++;
+                else if (g >= 4.0) ranges['Bueno (4.0-4.4)']++;
+                else if (g >= 3.5) ranges['Satisfactorio (3.5-3.9)']++;
+                else if (g >= 3.0) ranges['Aceptable (3.0-3.4)']++;
+                else ranges['Insuficiente (< 3.0)']++;
+            });
+            
+            new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Completadas', 'En Progreso'],
+                    labels: Object.keys(ranges),
                     datasets: [{
-                        data: [completed, inProgress],
-                        backgroundColor: ['#28a745', '#ffc107'],
+                        data: Object.values(ranges),
+                        backgroundColor: [
+                            '#28a745', // Verde para excelente
+                            '#20c997', // Verde claro para bueno
+                            '#ffc107', // Amarillo para satisfactorio
+                            '#fd7e14', // Naranja para aceptable
+                            '#dc3545'  // Rojo para insuficiente
+                        ],
                         borderWidth: 2,
                         borderColor: '#fff'
                     }]
@@ -427,7 +710,62 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 15,
+                                padding: 10
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initRadarChart() {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            
+            // Tomar hasta 6 materias para el radar (para evitar sobrecarga visual)
+            const subjectsForRadar = gradesData.slice(0, 6);
+            
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: subjectsForRadar.map(g => g.subjectCode),
+                    datasets: [{
+                        label: 'Nota Actual',
+                        data: subjectsForRadar.map(g => g.currentGrade || 0),
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }, {
+                        label: 'Meta (3.0)',
+                        data: subjectsForRadar.map(() => 3.0),
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
                         }
                     }
                 }

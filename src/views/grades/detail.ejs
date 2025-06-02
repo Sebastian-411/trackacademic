@@ -27,9 +27,6 @@
                         <a href="/evaluation-plans/${grade.evaluationPlanId._id}" class="btn btn-outline-info">
                             <i class="bi bi-clipboard-check me-1"></i>Ver Plan
                         </a>
-                        <button type="button" class="btn btn-outline-success" onclick="showProjections()">
-                            <i class="bi bi-graph-up me-1"></i>Proyecciones
-                        </button>
                         <button type="button" class="btn btn-outline-primary" onclick="exportGrade()">
                             <i class="bi bi-download me-1"></i>Exportar
                         </button>
@@ -135,7 +132,7 @@
                                         <tr>
                                             <th width="40">#</th>
                                             <th>Actividad</th>
-                                            <th>Tipo</th>
+                                            <th></th>
                                             <th class="text-center" width="120">Porcentaje</th>
                                             <th class="text-center" width="120">Calificación</th>
                                             <th class="text-center" width="120">Nota Ponderada</th>
@@ -170,7 +167,7 @@
                                                         ` : ''}
                                                     </td>
                                                     <td>
-                                                        <span class="badge bg-secondary">${activity.type}</span>
+                                                        <span class="badge bg-secondary"></span>
                                                     </td>
                                                     <td class="text-center">
                                                         <span class="fw-bold text-primary">${activity.percentage}%</span>
@@ -221,72 +218,6 @@
                 </div>
             </div>
 
-            <!-- Grade History Chart -->
-            <div class="row mb-4">
-                <div class="col-lg-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-graph-up me-2"></i>Evolución de la Calificación
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="gradeProgressChart" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Grade Distribution -->
-                <div class="col-lg-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-pie-chart me-2"></i>Distribución por Tipo
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <canvas id="activityTypeChart" width="300" height="300"></canvas>
-                            
-                            <!-- Statistics -->
-                            <div class="mt-3">
-                                ${(() => {
-                                    const types = {};
-                                    grade.activities.forEach(activity => {
-                                        if (!types[activity.type]) {
-                                            types[activity.type] = { count: 0, percentage: 0, avgScore: 0, scores: [] };
-                                        }
-                                        types[activity.type].count++;
-                                        types[activity.type].percentage += activity.percentage;
-                                        if (activity.score !== null && activity.score !== undefined) {
-                                            types[activity.type].scores.push(activity.score);
-                                        }
-                                    });
-                                    
-                                    Object.keys(types).forEach(type => {
-                                        const scores = types[type].scores;
-                                        types[type].avgScore = scores.length > 0 
-                                            ? scores.reduce((sum, score) => sum + score, 0) / scores.length 
-                                            : 0;
-                                    });
-                                    
-                                    return Object.entries(types).map(([type, data]) => `
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div>
-                                                <small class="fw-medium">${type}</small>
-                                                <br>
-                                                <small class="text-muted">${data.count} actividades - ${data.percentage}%</small>
-                                            </div>
-                                            <span class="badge ${data.avgScore >= 3.0 ? 'bg-success' : 'bg-warning'}">
-                                                ${data.avgScore > 0 ? data.avgScore.toFixed(2) : '--'}
-                                            </span>
-                                        </div>
-                                    `).join('');
-                                })()}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- Additional Information -->
             <div class="row">
