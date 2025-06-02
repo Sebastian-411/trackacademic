@@ -399,7 +399,7 @@
                     savePlanBtn.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Guardar Plan en Mis Materias';
                     
                     // Mostrar modal de confirmación de sobreescritura
-                    const shouldOverwrite = await showOverwriteConfirmationModal(savePlanResult.existingPlan, savePlanResult.newPlan);
+                    const shouldOverwrite = await showOverwriteConfirmationModal(savePlanResult.existingPlan, savePlanResult.newPlan, 'plan');
                     
                     if (!shouldOverwrite) {
                         // Usuario canceló, no hacer nada
@@ -535,7 +535,36 @@
             const planActivities = serverData.planActivities;
             const planId = serverData.planId;
             
-            // SIEMPRE calcular notas mínimas directamente, sin modal
+            // Si es estudiante, verificar si el plan está guardado
+            if (serverData.user && serverData.user.role === 'student') {
+                try {
+                    const response = await fetch('/api/check-saved-plan/' + planId);
+                    const result = await response.json();
+                    
+                    if (result.success && result.isSaved) {
+                        // El plan ya está guardado, guardar las notas automáticamente
+                        await saveGradesQuietly(planId, serverData.planActivities);
+                    } else if (result.success && !result.isSaved) {
+                        // El plan no está guardado, preguntar si quiere guardarlo
+                        const shouldSave = await showSavePlanModal();
+                        
+                        if (shouldSave) {
+                            // Usuario quiere guardar el plan
+                            await savePlanToMyCourses();
+                        } else {
+                            // Usuario no quiere guardar, solo mostrar mensaje informativo
+                            if (typeof showToast === 'function') {
+                                showToast('Calculando notas mínimas...', 'info');
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al verificar plan guardado:', error);
+                    // Continuar con el cálculo aunque haya error
+                }
+            }
+            
+            // SIEMPRE calcular notas mínimas
             console.log('Ejecutando cálculo de notas mínimas...');
             
             const targetGrade = parseFloat(document.getElementById('targetGrade').value);
@@ -567,6 +596,136 @@
             console.log('Cálculo de notas mínimas completado');
         };
         
+        // Función para guardar notas silenciosamente (sin modales)
+        window.saveGradesQuietly = async function(planId, planActivities) {
+            try {
+                // Recopilar notas actuales
+                const grades = [];
+                let hasAnyGrade = false;
+                
+                planActivities.forEach((activity, index) => {
+                    const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
+                    const grade = parseFloat(gradeInput.value) || 0;
+                    
+                    grades.push({
+                        activityIndex: index,
+                        grade: grade
+                    });
+                    
+                    if (grade && grade > 0) {
+                        hasAnyGrade = true;
+                    }
+                });
+                
+                if (!hasAnyGrade) {
+                    return; // No hay notas que guardar
+                }
+                
+                // Intentar guardar las notas silenciosamente
+                const response = await fetch('/api/save-grades/' + planId, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ grades: grades })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Notas guardadas exitosamente
+                    if (typeof showToast === 'function') {
+                        showToast('Notas guardadas automáticamente', 'success');
+                    }
+                    console.log('Notas guardadas silenciosamente');
+                } else {
+                    console.log('No se pudieron guardar las notas silenciosamente:', result.message);
+                }
+                
+            } catch (error) {
+                console.error('Error al guardar notas silenciosamente:', error);
+            }
+        };
+
+        // Función para mostrar modal simple de confirmación para guardar plan (cuando no hay plan existente)
+        window.showSavePlanModal = function() {
+            return new Promise((resolve) => {
+                // Crear modal dinámicamente
+                const modalHTML = 
+                    '<div class="modal fade" id="savePlanModal" tabindex="-1" aria-hidden="true">' +
+                        '<div class="modal-dialog modal-dialog-centered">' +
+                            '<div class="modal-content">' +
+                                '<div class="modal-header">' +
+                                    '<h5 class="modal-title">' +
+                                        '<i class="bi bi-question-circle text-primary me-2"></i>' +
+                                        'Guardar Plan de Evaluación' +
+                                    '</h5>' +
+                                    '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
+                                '</div>' +
+                                '<div class="modal-body">' +
+                                    '<div class="text-center mb-3">' +
+                                        '<i class="bi bi-bookmark-plus text-success" style="font-size: 3rem;"></i>' +
+                                    '</div>' +
+                                    '<p class="text-center mb-3">' +
+                                        '<strong>¿Te gustaría guardar este plan en tus materias?</strong>' +
+                                    '</p>' +
+                                    '<p class="text-muted text-center mb-0">' +
+                                        'Esto te permitirá acceder rápidamente al plan y guardar tus notas de forma permanente.' +
+                                    '</p>' +
+                                '</div>' +
+                                '<div class="modal-footer">' +
+                                    '<button type="button" id="noSaveBtn" class="btn btn-secondary" data-bs-dismiss="modal">' +
+                                        'No, solo calcular' +
+                                    '</button>' +
+                                    '<button type="button" id="yesSaveBtn" class="btn btn-success" data-bs-dismiss="modal">' +
+                                        '<i class="bi bi-check-lg me-2"></i>Sí, guardar plan' +
+                                    '</button>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                
+                // Agregar modal al DOM
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                
+                // Agregar event listeners a los botones
+                const noSaveBtn = document.getElementById('noSaveBtn');
+                const yesSaveBtn = document.getElementById('yesSaveBtn');
+                
+                noSaveBtn.addEventListener('click', function() {
+                    resolve(false);
+                    cleanupModal();
+                });
+                
+                yesSaveBtn.addEventListener('click', function() {
+                    resolve(true);
+                    cleanupModal();
+                });
+                
+                // Función para limpiar el modal
+                function cleanupModal() {
+                    setTimeout(function() {
+                        const modal = document.getElementById('savePlanModal');
+                        if (modal) {
+                            modal.remove();
+                        }
+                    }, 300);
+                }
+                
+                // Mostrar modal usando Bootstrap JS
+                const modalElement = document.getElementById('savePlanModal');
+                if (typeof bootstrap !== 'undefined') {
+                    const bsModal = new bootstrap.Modal(modalElement);
+                    bsModal.show();
+                } else {
+                    // Fallback: mostrar modal manualmente
+                    modalElement.style.display = 'block';
+                    modalElement.classList.add('show');
+                    document.body.classList.add('modal-open');
+                }
+            });
+        };
+
         // Función para mostrar modal de confirmación de sobreescritura
         window.showOverwriteConfirmationModal = function(existingPlan, newPlan, context = 'plan') {
             return new Promise((resolve) => {
