@@ -514,7 +514,7 @@
                         <h6><i class="bi bi-exclamation-triangle me-2"></i>Materias en Riesgo (${atRiskSubjects.length})</h6>
                         <ul class="mb-0">
                             ${atRiskSubjects.map(subject => 
-                                `<li><strong>${subject.subjectCode}</strong>: ${subject.currentGrade.toFixed(2)} - Necesitas mejorar urgentemente</li>`
+                                `<li><strong>${subject.subjectCode} - ${subject.subjectName || subject.subjectCode}</strong>: ${subject.currentGrade.toFixed(2)} - Necesitas mejorar urgentemente</li>`
                             ).join('')}
                         </ul>
                     </div>
@@ -527,7 +527,7 @@
                         <h6><i class="bi bi-clock me-2"></i>Sin Actividad (${notStartedSubjects.length})</h6>
                         <ul class="mb-0">
                             ${notStartedSubjects.map(subject => 
-                                `<li><strong>${subject.subjectCode}</strong>: No has registrado calificaciones</li>`
+                                `<li><strong>${subject.subjectCode} - ${subject.subjectName || subject.subjectCode}</strong>: No has registrado calificaciones</li>`
                             ).join('')}
                         </ul>
                     </div>
@@ -661,6 +661,15 @@
                     plugins: {
                         legend: {
                             display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const semester = context.label;
+                                    const semesterSubjects = gradesData.filter(g => g.semester === semester);
+                                    return semesterSubjects.map(s => `${s.subjectCode} - ${s.subjectName || s.subjectCode}: ${(s.currentGrade || 0).toFixed(2)}`);
+                                }
+                            }
                         }
                     }
                 }
@@ -730,7 +739,7 @@
             new Chart(ctx, {
                 type: 'radar',
                 data: {
-                    labels: subjectsForRadar.map(g => g.subjectCode),
+                    labels: subjectsForRadar.map(g => `${g.subjectCode} - ${g.subjectName || g.subjectCode}`),
                     datasets: [{
                         label: 'Nota Actual',
                         data: subjectsForRadar.map(g => g.currentGrade || 0),

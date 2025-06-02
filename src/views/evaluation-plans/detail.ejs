@@ -27,9 +27,9 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h2 class="mb-1">
-                            <i class="bi bi-clipboard-data me-2"></i>Plan de Evaluación
+                            <i class="bi bi-clipboard-data me-2"></i><%= plan.subjectCode %> - <%= plan.subjectName || 'Curso' %>
                         </h2>
-                        <p class="text-muted mb-0"><%= plan.subjectCode %> - <%= plan.subjectName || 'Curso' %></p>
+                        <p class="text-muted mb-0">Plan de Evaluación</p>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <a href="/evaluation-plans/<%= plan._id %>/edit" class="btn btn-outline-primary">
@@ -55,7 +55,7 @@
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <h4 class="card-title mb-3">
-                                    <%= plan.subjectCode %> - Grupo <%= plan.groupNumber %>
+                                    <%= plan.subjectCode %> - <%= plan.subjectName || 'Curso' %> - Grupo <%= plan.groupNumber %>
                                     <% if (plan.isApproved) { %>
                                         <span class="badge bg-white text-success ms-2"><i class="bi bi-check-circle me-1"></i>Aprobado</span>
                                     <% } else { %>
