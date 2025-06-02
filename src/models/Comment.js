@@ -55,15 +55,6 @@ const commentSchema = new mongoose.Schema({
     enum: ['active', 'resolved', 'closed'],
     default: 'active'
   },
-  tags: [{
-    type: String,
-    trim: true,
-    lowercase: true
-  }],
-  replies: {
-    type: [replySchema],
-    default: []
-  },
   likes: [{
     userId: {
       type: String,

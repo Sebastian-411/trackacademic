@@ -1,159 +1,178 @@
-<%- include('../layouts/main', { 
-    body: `
-        <div class="container-fluid py-4">
-            <!-- Page Header -->
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
-                <h1 class="h2">
-                    <i class="bi bi-clipboard-data me-2 text-primary"></i>Mis Calificaciones
-                </h1>
-                <div class="btn-toolbar mb-2 mb-md-0">
-                    <div class="btn-group me-2">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportGrades()">
-                            <i class="bi bi-download me-1"></i>Exportar
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
-                        </button>
-                    </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'Mis Calificaciones - Trackademic' %></title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header/Navbar -->
+    <%- include('../partials/navbar') %>
+    
+    <div class="container-fluid py-4">
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-4 border-bottom">
+            <h1 class="h2">
+                <i class="bi bi-clipboard-data me-2 text-primary"></i>Mis Calificaciones
+            </h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportGrades()">
+                        <i class="bi bi-download me-1"></i>Exportar
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Statistics Cards -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="card-title mb-1">Total Materias</h5>
-                                    <h2 class="mb-0">${stats.totalSubjects}</h2>
-                                </div>
-                                <i class="bi bi-book-fill" style="font-size: 2rem; opacity: 0.8;"></i>
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1">Total Materias</h5>
+                                <h2 class="mb-0"><%= stats.totalSubjects || 0 %></h2>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="card-title mb-1">Completadas</h5>
-                                    <h2 class="mb-0">${stats.completedSubjects}</h2>
-                                </div>
-                                <i class="bi bi-check-circle-fill" style="font-size: 2rem; opacity: 0.8;"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="card-title mb-1">Promedio General</h5>
-                                    <h2 class="mb-0">${stats.averageGrade || '--'}</h2>
-                                </div>
-                                <i class="bi bi-graph-up" style="font-size: 2rem; opacity: 0.8;"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-dark">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="card-title mb-1">En Progreso</h5>
-                                    <h2 class="mb-0">${stats.totalSubjects - stats.completedSubjects}</h2>
-                                </div>
-                                <i class="bi bi-hourglass-split" style="font-size: 2rem; opacity: 0.8;"></i>
-                            </div>
+                            <i class="bi bi-book-fill" style="font-size: 2rem; opacity: 0.8;"></i>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1">Completadas</h5>
+                                <h2 class="mb-0"><%= stats.completedSubjects || 0 %></h2>
+                            </div>
+                            <i class="bi bi-check-circle-fill" style="font-size: 2rem; opacity: 0.8;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1">Promedio General</h5>
+                                <h2 class="mb-0"><%= stats.averageGrade ? stats.averageGrade.toFixed(2) : '--' %></h2>
+                            </div>
+                            <i class="bi bi-graph-up" style="font-size: 2rem; opacity: 0.8;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title mb-1">En Progreso</h5>
+                                <h2 class="mb-0"><%= (stats.totalSubjects || 0) - (stats.completedSubjects || 0) %></h2>
+                            </div>
+                            <i class="bi bi-hourglass-split" style="font-size: 2rem; opacity: 0.8;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <!-- Filters -->
-            <div class="row mb-4">
-                <div class="col-12">
+        <!-- Filters -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="GET" id="filtersForm">
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
+                                    <label for="semester" class="form-label">
+                                        <i class="bi bi-calendar me-1"></i>Semestre
+                                    </label>
+                                    <select class="form-select" id="semester" name="semester">
+                                        <option value="">Todos los semestres</option>
+                                        <% if (availableSemesters && availableSemesters.length > 0) { %>
+                                            <% availableSemesters.forEach(sem => { %>
+                                                <option value="<%= sem %>" <%= selectedSemester === sem ? 'selected' : '' %>><%= sem %></option>
+                                            <% }); %>
+                                        <% } %>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label for="status" class="form-label">
+                                        <i class="bi bi-funnel me-1"></i>Estado
+                                    </label>
+                                    <select class="form-select" id="status" name="status">
+                                        <option value="">Todos los estados</option>
+                                        <option value="complete" <%= selectedStatus === 'complete' ? 'selected' : '' %>>Completadas</option>
+                                        <option value="in-progress" <%= selectedStatus === 'in-progress' ? 'selected' : '' %>>En progreso</option>
+                                        <option value="not-started" <%= selectedStatus === 'not-started' ? 'selected' : '' %>>Sin calificar</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="d-flex gap-2">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-funnel me-1"></i>Filtrar
+                                        </button>
+                                        <a href="/grades" class="btn btn-outline-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Limpiar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Grades List -->
+        <div class="row">
+            <div class="col-12">
+                <% if (grades && grades.length > 0) { %>
                     <div class="card">
-                        <div class="card-body">
-                            <form method="GET" id="filtersForm">
-                                <div class="row g-3 align-items-end">
-                                    <div class="col-md-4">
-                                        <label for="semester" class="form-label">
-                                            <i class="bi bi-calendar me-1"></i>Semestre
-                                        </label>
-                                        <select class="form-select" id="semester" name="semester">
-                                            <option value="">Todos los semestres</option>
-                                            <option value="2024-2" ${selectedSemester === '2024-2' ? 'selected' : ''}>2024-2</option>
-                                            <option value="2024-1" ${selectedSemester === '2024-1' ? 'selected' : ''}>2024-1</option>
-                                            <option value="2023-2" ${selectedSemester === '2023-2' ? 'selected' : ''}>2023-2</option>
-                                            <option value="2023-1" ${selectedSemester === '2023-1' ? 'selected' : ''}>2023-1</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <label for="status" class="form-label">
-                                            <i class="bi bi-funnel me-1"></i>Estado
-                                        </label>
-                                        <select class="form-select" id="status" name="status">
-                                            <option value="">Todos los estados</option>
-                                            <option value="complete">Completadas</option>
-                                            <option value="in-progress">En progreso</option>
-                                            <option value="not-started">Sin calificar</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="col-md-4">
-                                        <div class="d-flex gap-2">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="bi bi-funnel me-1"></i>Filtrar
-                                            </button>
-                                            <a href="/grades" class="btn btn-outline-secondary">
-                                                <i class="bi bi-x-circle me-1"></i>Limpiar
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-ul me-2"></i>Calificaciones
+                            </h5>
+                            <span class="badge bg-primary"><%= grades.length %> materias</span>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Grades List -->
-            <div class="row">
-                <div class="col-12">
-                    ${grades && grades.length > 0 ? `
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-list-ul me-2"></i>Calificaciones
-                                </h5>
-                                <span class="badge bg-primary">${grades.length} materias</span>
-                            </div>
-                            <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Materia</th>
-                                                <th class="text-center">Semestre</th>
-                                                <th class="text-center">Progreso</th>
-                                                <th class="text-center">Nota Actual</th>
-                                                <th class="text-center">Nota Final</th>
-                                                <th class="text-center">Estado</th>
-                                                <th class="text-center">Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${grades.map(grade => {
-                                                const completedActivities = grade.activities.filter(a => a.score !== null).length;
-                                                const totalActivities = grade.activities.length;
-                                                const progressPercent = totalActivities > 0 
-                                                    ? Math.round((completedActivities / totalActivities) * 100) : 0;
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Materia</th>
+                                            <th class="text-center">Semestre</th>
+                                            <th class="text-center">Progreso</th>
+                                            <th class="text-center">Nota Actual</th>
+                                            <th class="text-center">Nota Final</th>
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% grades.forEach(grade => { %>
+                                            <%
+                                                const completedActivities = grade.activities ? grade.activities.filter(a => a.score !== null).length : 0;
+                                                const totalActivities = grade.activities ? grade.activities.length : 0;
+                                                const progressPercent = totalActivities > 0 ? Math.round((completedActivities / totalActivities) * 100) : 0;
                                                 
                                                 const currentGrade = grade.currentGrade || 0;
                                                 const finalGrade = grade.finalGrade;
@@ -171,307 +190,277 @@
                                                     statusBadge = 'bg-secondary';
                                                     statusText = 'Sin calificar';
                                                 }
-                                                
-                                                return `
-                                                    <tr>
-                                                        <td>
-                                                            <div>
-                                                                <div class="fw-semibold">${grade.subjectCode}</div>
-                                                                <small class="text-muted">${grade.subjectName || grade.subjectCode}</small>
-                                                            </div>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <span class="fw-medium">${grade.semester}</span>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <div class="d-flex align-items-center justify-content-center">
-                                                                <div class="progress me-2" style="width: 60px; height: 8px;">
-                                                                    <div class="progress-bar ${progressPercent === 100 ? 'bg-success' : 'bg-primary'}" 
-                                                                         style="width: ${progressPercent}%"></div>
-                                                                </div>
-                                                                <small class="text-muted">${completedActivities}/${totalActivities}</small>
-                                                            </div>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <span class="fw-bold ${currentGrade >= 3.0 ? 'text-success' : 'text-warning'}">
-                                                                ${currentGrade.toFixed(2)}
-                                                            </span>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            ${finalGrade ? `
-                                                                <span class="fw-bold ${finalGrade >= 3.0 ? 'text-success' : 'text-danger'}">
-                                                                    ${finalGrade.toFixed(2)}
-                                                                </span>
-                                                            ` : '<span class="text-muted">--</span>'}
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <span class="badge ${statusBadge}">${statusText}</span>
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <div class="btn-group btn-group-sm" role="group">
-                                                                <a href="/grades/${grade._id}" 
-                                                                   class="btn btn-outline-primary" 
-                                                                   data-bs-toggle="tooltip" 
-                                                                   title="Ver detalles">
-                                                                    <i class="bi bi-eye"></i>
-                                                                </a>
-                                                                <a href="/evaluation-plans/${grade.evaluationPlanId._id}" 
-                                                                   class="btn btn-outline-info" 
-                                                                   data-bs-toggle="tooltip" 
-                                                                   title="Ver plan">
-                                                                    <i class="bi bi-clipboard-check"></i>
-                                                                </a>
-                                                                <button class="btn btn-outline-success" 
-                                                                        data-bs-toggle="tooltip" 
-                                                                        title="Proyecciones"
-                                                                        onclick="showProjections('${grade._id}')">
-                                                                    <i class="bi bi-graph-up"></i>
-                                                                </button>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                `;
-                                            }).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            %>
+                                            <tr>
+                                                <td>
+                                                    <div>
+                                                        <div class="fw-semibold"><%= grade.subjectCode %></div>
+                                                        <small class="text-muted"><%= grade.subjectName || grade.subjectCode %></small>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="fw-medium"><%= grade.semester %></span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="d-flex align-items-center justify-content-center">
+                                                        <div class="progress me-2" style="width: 60px; height: 8px;">
+                                                            <div class="progress-bar <%= progressPercent === 100 ? 'bg-success' : 'bg-primary' %>" 
+                                                                 style="width: <%= progressPercent %>%;"></div>
+                                                        </div>
+                                                        <small class="text-muted"><%= completedActivities %>/<%= totalActivities %></small>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="fw-bold <%= currentGrade >= 3.0 ? 'text-success' : 'text-warning' %>">
+                                                        <%= currentGrade.toFixed(2) %>
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <% if (finalGrade !== null && finalGrade !== undefined) { %>
+                                                        <span class="fw-bold <%= finalGrade >= 3.0 ? 'text-success' : 'text-danger' %>">
+                                                            <%= finalGrade.toFixed(2) %>
+                                                        </span>
+                                                    <% } else { %>
+                                                        <span class="text-muted">--</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span class="badge <%= statusBadge %>"><%= statusText %></span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <a href="/grades/<%= grade._id %>" 
+                                                           class="btn btn-outline-primary" 
+                                                           data-bs-toggle="tooltip" 
+                                                           title="Ver detalles">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <% if (grade.evaluationPlanId && grade.evaluationPlanId._id) { %>
+                                                            <a href="/evaluation-plans/<%= grade.evaluationPlanId._id %>" 
+                                                               class="btn btn-outline-info" 
+                                                               data-bs-toggle="tooltip" 
+                                                               title="Ver plan">
+                                                                <i class="bi bi-clipboard-check"></i>
+                                                            </a>
+                                                        <% } %>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                    ` : `
-                        <!-- Empty State -->
-                        <div class="card">
-                            <div class="card-body text-center py-5">
-                                <i class="bi bi-clipboard-x text-muted mb-3" style="font-size: 4rem;"></i>
-                                <h4 class="text-muted mb-3">No se encontraron calificaciones</h4>
-                                <p class="text-muted mb-4">
-                                    ${selectedSemester ? 
-                                        'No tienes calificaciones para el semestre seleccionado.' :
-                                        'Aún no tienes calificaciones registradas.'
-                                    }
-                                </p>
-                                ${selectedSemester ? `
-                                    <a href="/grades" class="btn btn-primary">
-                                        <i class="bi bi-funnel-fill me-2"></i>Ver Todas las Calificaciones
-                                    </a>
-                                ` : `
-                                    <a href="/evaluation-plans" class="btn btn-primary">
-                                        <i class="bi bi-clipboard-check me-2"></i>Ver Planes de Evaluación
-                                    </a>
-                                `}
-                            </div>
+                    </div>
+                <% } else { %>
+                    <!-- Empty State -->
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-clipboard-x text-muted mb-3" style="font-size: 4rem;"></i>
+                            <h4 class="text-muted mb-3">No se encontraron calificaciones</h4>
+                            <p class="text-muted mb-4">
+                                <% if (selectedSemester) { %>
+                                    No tienes calificaciones para el semestre seleccionado.
+                                <% } else { %>
+                                    Aún no tienes calificaciones registradas.
+                                <% } %>
+                            </p>
+                            <% if (selectedSemester) { %>
+                                <a href="/grades" class="btn btn-primary">
+                                    <i class="bi bi-funnel-fill me-2"></i>Ver Todas las Calificaciones
+                                </a>
+                            <% } else { %>
+                                <a href="/evaluation-plans" class="btn btn-primary">
+                                    <i class="bi bi-clipboard-check me-2"></i>Ver Planes de Evaluación
+                                </a>
+                            <% } %>
                         </div>
-                    `}
-                </div>
+                    </div>
+                <% } %>
             </div>
-
-            <!-- Grade Chart (if there are grades) -->
-            ${grades && grades.length > 0 ? `
-                <div class="row mt-4">
-                    <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-bar-chart me-2"></i>Evolución de Calificaciones
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="gradesChart" height="300"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="bi bi-pie-chart me-2"></i>Estado de Materias
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <canvas id="statusChart" height="300"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            ` : ''}
         </div>
 
-        <!-- Projections Modal -->
-        <div class="modal fade" id="projectionsModal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="bi bi-graph-up me-2"></i>Proyección de Calificaciones
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <!-- Grade Chart (if there are grades) -->
+        <% if (grades && grades.length > 0) { %>
+            <div class="row mt-4">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-bar-chart me-2"></i>Evolución de Calificaciones
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="gradesChart" height="100"></canvas>
+                        </div>
                     </div>
-                    <div class="modal-body" id="projectionsContent">
-                        <div class="text-center">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Cargando...</span>
-                            </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-pie-chart me-2"></i>Estado de Materias
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="statusChart" height="100"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Projections Modal -->
+    <div class="modal fade" id="projectionsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-graph-up me-2"></i>Proyección de Calificaciones
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="projectionsContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Inicializar gráficos
-                ${grades && grades.length > 0 ? 'initCharts();' : ''}
-                
-                // Auto-submit de filtros
-                const selects = document.querySelectorAll('#semester, #status');
-                selects.forEach(select => {
-                    select.addEventListener('change', function() {
-                        setTimeout(() => {
-                            document.getElementById('filtersForm').submit();
-                        }, 100);
-                    });
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Pasar datos del servidor al JavaScript
+        const gradesData = <%- JSON.stringify(grades || []) %>;
+        const statsData = <%- JSON.stringify(stats || {}) %>;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar gráficos si hay datos
+            if (gradesData && gradesData.length > 0) {
+                initCharts();
+            }
+            
+            // Auto-submit de filtros
+            const selects = document.querySelectorAll('#semester, #status');
+            selects.forEach(select => {
+                select.addEventListener('change', function() {
+                    setTimeout(() => {
+                        document.getElementById('filtersForm').submit();
+                    }, 100);
                 });
             });
+            
+            // Inicializar tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
 
-            function initCharts() {
-                // Gráfico de evolución de calificaciones
-                const gradesData = ${JSON.stringify(grades)};
-                const ctx1 = document.getElementById('gradesChart').getContext('2d');
-                
-                new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
-                        labels: gradesData.map(g => g.subjectCode),
-                        datasets: [{
-                            label: 'Nota Actual',
-                            data: gradesData.map(g => g.currentGrade || 0),
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1
-                        }, {
-                            label: 'Nota Final',
-                            data: gradesData.map(g => g.finalGrade || null),
-                            backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                            borderColor: 'rgba(255, 99, 132, 1)',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 5,
-                                ticks: {
-                                    stepSize: 0.5
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
-
-                // Gráfico de estado de materias
-                const completed = ${stats.completedSubjects};
-                const inProgress = ${stats.totalSubjects - stats.completedSubjects};
-                
-                const ctx2 = document.getElementById('statusChart').getContext('2d');
-                
-                new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Completadas', 'En Progreso'],
-                        datasets: [{
-                            data: [completed, inProgress],
-                            backgroundColor: ['#28a745', '#ffc107'],
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
+        function initCharts() {
+            // Gráfico de evolución de calificaciones
+            const ctx1 = document.getElementById('gradesChart').getContext('2d');
+            
+            new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: gradesData.map(g => g.subjectCode),
+                    datasets: [{
+                        label: 'Nota Actual',
+                        data: gradesData.map(g => g.currentGrade || 0),
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Nota Final',
+                        data: gradesData.map(g => g.finalGrade || null),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 5,
+                            ticks: {
+                                stepSize: 0.5
                             }
                         }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
                     }
-                });
-            }
-
-            async function showProjections(gradeId) {
-                const modal = new bootstrap.Modal(document.getElementById('projectionsModal'));
-                const content = document.getElementById('projectionsContent');
-                
-                // Mostrar modal con loading
-                modal.show();
-                content.innerHTML = '<div class="text-center">' +
-                    '<div class="spinner-border text-primary" role="status">' +
-                        '<span class="visually-hidden">Cargando...</span>' +
-                    '</div>' +
-                    '<p class="mt-2">Calculando proyecciones...</p>' +
-                '</div>';
-                
-                try {
-                    const response = await fetch('/api/grades/' + gradeId + '/projections');
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        content.innerHTML = '<div class="alert alert-info">' +
-                                '<i class="bi bi-info-circle me-2"></i>' +
-                                'Estas proyecciones son estimaciones basadas en tus calificaciones actuales.' +
-                            '</div>' +
-                            
-                            '<div class="row">' +
-                                '<div class="col-md-6">' +
-                                    '<h6>Escenarios Posibles:</h6>' +
-                                    '<ul class="list-group">' +
-                                        data.scenarios.map(scenario => 
-                                            '<li class="list-group-item d-flex justify-content-between align-items-center">' +
-                                                scenario.name +
-                                                '<span class="badge ' + (scenario.grade >= 3.0 ? 'bg-success' : 'bg-danger') + '">' +
-                                                    scenario.grade.toFixed(2) +
-                                                '</span>' +
-                                            '</li>'
-                                        ).join('') +
-                                    '</ul>' +
-                                '</div>' +
-                                '<div class="col-md-6">' +
-                                    '<h6>Próximas Actividades:</h6>' +
-                                    '<ul class="list-group">' +
-                                        data.pendingActivities.map(activity => 
-                                            '<li class="list-group-item">' +
-                                                '<div class="fw-medium">' + activity.name + '</div>' +
-                                                '<small class="text-muted">' + activity.percentage + '% - ' + activity.type + '</small>' +
-                                            '</li>'
-                                        ).join('') +
-                                    '</ul>' +
-                                '</div>' +
-                            '</div>' +
-                            
-                            '<div class="mt-3 p-3 bg-light rounded">' +
-                                '<h6>Recomendación:</h6>' +
-                                '<p class="mb-0">' + data.recommendation + '</p>' +
-                            '</div>';
-                    } else {
-                        content.innerHTML = '<div class="alert alert-danger">' +
-                                'Error al cargar las proyecciones: ' + data.error +
-                            '</div>';
-                    }
-                } catch (error) {
-                    content.innerHTML = '<div class="alert alert-danger">' +
-                            'Error de conexión al cargar las proyecciones.' +
-                        '</div>';
                 }
-            }
+            });
 
-            function exportGrades() {
-                alert('Funcionalidad de exportación pendiente de implementación');
-                // TODO: Implementar exportación a PDF/Excel
-            }
-        </script>
-    `
-}) %> 
+            // Gráfico de estado de materias
+            const completed = statsData.completedSubjects || 0;
+            const inProgress = (statsData.totalSubjects || 0) - completed;
+            
+            const ctx2 = document.getElementById('statusChart').getContext('2d');
+            
+            new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completadas', 'En Progreso'],
+                    datasets: [{
+                        data: [completed, inProgress],
+                        backgroundColor: ['#28a745', '#ffc107'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        async function showProjections(gradeId) {
+            const modal = new bootstrap.Modal(document.getElementById('projectionsModal'));
+            const content = document.getElementById('projectionsContent');
+            
+            // Mostrar modal con loading
+            modal.show();
+            content.innerHTML = '<div class="text-center">' +
+                '<div class="spinner-border text-primary" role="status">' +
+                    '<span class="visually-hidden">Cargando...</span>' +
+                '</div>' +
+                '<p class="mt-2">Calculando proyecciones...</p>' +
+            '</div>';
+            
+            // Simular proyecciones (implementar API real más tarde)
+            setTimeout(() => {
+                content.innerHTML = '<div class="alert alert-info">' +
+                        '<i class="bi bi-info-circle me-2"></i>' +
+                        'Funcionalidad de proyecciones en desarrollo.' +
+                    '</div>' +
+                    '<p>Esta funcionalidad calculará automáticamente qué notas necesitas para aprobar cada materia.</p>';
+            }, 1000);
+        }
+
+        function exportGrades() {
+            alert('Funcionalidad de exportación pendiente de implementación');
+            // TODO: Implementar exportación a PDF/Excel
+        }
+    </script>
+</body>
+</html> 

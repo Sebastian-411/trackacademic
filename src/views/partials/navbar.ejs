@@ -39,7 +39,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <%= typeof currentPage !== 'undefined' && currentPage === 'my-plans' ? 'active' : '' %>" href="#" onclick="showMyPlansModal()">
+                    <a class="nav-link <%= typeof currentPage !== 'undefined' && currentPage === 'my-plans' ? 'active' : '' %>" href="/dashboard#mis-planes">
                         <i class="bi bi-bookmark-fill me-1"></i>
                         Mis Planes
                         <span id="myPlansCount" class="badge bg-light text-dark ms-1" style="display: none;">0</span>
@@ -61,8 +61,6 @@
                         <%= user.firstName || 'Estudiante' %>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="/profile"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="/reports"><i class="bi bi-file-text me-2"></i>Reportes</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <form action="/logout" method="POST" class="d-inline">

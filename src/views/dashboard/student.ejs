@@ -250,40 +250,52 @@
                     <div class="card-body text-center">
                         <div class="stats-number"><%= totalSubjects || 0 %></div>
                         <div class="stats-label">Materias Total</div>
+                        <% if ((totalSubjects || 0) === 0) { %>
+                            <small class="text-muted">Guarda tu primer plan</small>
+                        <% } %>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card card-custom stats-card">
-                        <div class="card-body text-center">
-                        <div class="stats-number"><%= averageGrade || '0.0' %></div>
+                    <div class="card-body text-center">
+                        <div class="stats-number"><%= typeof averageGrade === 'number' ? averageGrade.toFixed(2) : '0.0' %></div>
                         <div class="stats-label">Promedio General</div>
+                        <% if ((totalSubjects || 0) === 0) { %>
+                            <small class="text-muted">Ingresa notas</small>
+                        <% } %>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card card-custom stats-card">
-                        <div class="card-body text-center">
+                    <div class="card-body text-center">
                         <div class="stats-number"><%= passedSubjects || 0 %></div>
                         <div class="stats-label">Materias Aprobadas</div>
+                        <% if ((passedSubjects || 0) === 0 && (totalSubjects || 0) > 0) { %>
+                            <small class="text-muted">Completa actividades</small>
+                        <% } %>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card card-custom stats-card">
-                        <div class="card-body text-center">
+                    <div class="card-body text-center">
                         <div class="stats-number"><%= pendingActivities || 0 %></div>
                         <div class="stats-label">Actividades Pendientes</div>
+                        <% if ((pendingActivities || 0) === 0 && (totalSubjects || 0) > 0) { %>
+                            <small class="text-success">¡Todo al día!</small>
+                        <% } %>
                     </div>
                 </div>
-                    </div>
-                </div>
+            </div>
+        </div>
                 
         <!-- Sección Principal -->
         <div class="row g-4">
             <!-- Mis Planes Guardados -->
             <div class="col-lg-8">
-                <div class="card card-custom">
+                <div class="card card-custom" id="mis-planes">
                     <div class="card-header card-header-custom">
                         <h3 class="card-title-custom">
                             <i class="bi bi-bookmark-star-fill"></i>
@@ -326,10 +338,6 @@
                                 <i class="bi bi-graph-up me-2"></i>
                                 Ver Mis Notas
                             </a>
-                            <a href="/reports" class="btn btn-outline-custom">
-                                <i class="bi bi-file-text me-2"></i>
-                                Reportes
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -344,5 +352,32 @@
     <!-- Custom JS -->
     <script src="/js/app.js"></script>
     <script src="/js/dashboard.js"></script>
+    
+    <script>
+        // Manejar scroll automático cuando se accede con hash
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar si hay un hash en la URL
+            if (window.location.hash === '#mis-planes') {
+                // Esperar un poco para que el contenido se cargue
+                setTimeout(() => {
+                    const element = document.getElementById('mis-planes');
+                    if (element) {
+                        element.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                        });
+                        
+                        // Agregar efecto visual temporal
+                        element.style.transition = 'box-shadow 0.3s ease';
+                        element.style.boxShadow = '0 0 20px rgba(37, 99, 235, 0.3)';
+                        
+                        setTimeout(() => {
+                            element.style.boxShadow = '';
+                        }, 2000);
+                    }
+                }, 500);
+            }
+        });
+    </script>
 </body>
 </html> 

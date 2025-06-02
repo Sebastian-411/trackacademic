@@ -376,7 +376,7 @@
                     }
                 });
                 
-                // Guardar el plan
+                // Intentar guardar el plan
                 const savePlanResponse = await fetch('/api/save-plan', {
                     method: 'POST',
                     headers: {
@@ -392,8 +392,59 @@
                 
                 const savePlanResult = await savePlanResponse.json();
                 
-                if (!savePlanResult.success) {
+                // Si el plan requiere confirmación de sobreescritura
+                if (savePlanResponse.status === 409 && savePlanResult.needsConfirmation) {
+                    // Restaurar el botón mientras mostramos la confirmación
+                    savePlanBtn.disabled = false;
+                    savePlanBtn.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Guardar Plan en Mis Materias';
+                    
+                    // Mostrar modal de confirmación de sobreescritura
+                    const shouldOverwrite = await showOverwriteConfirmationModal(savePlanResult.existingPlan, savePlanResult.newPlan);
+                    
+                    if (!shouldOverwrite) {
+                        // Usuario canceló, no hacer nada
+                        if (typeof showToast === 'function') {
+                            showToast('Operación cancelada', 'info');
+                        }
+                        return;
+                    }
+                    
+                    // Usuario confirmó sobreescritura, deshabilitar botón nuevamente
+                    savePlanBtn.disabled = true;
+                    savePlanBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sobreescribiendo...';
+                    
+                    // Confirmar sobreescritura
+                    const overwriteResponse = await fetch('/api/save-plan/confirm', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            evaluationPlanId: planId,
+                            subjectCode: serverData.subjectCode,
+                            semester: serverData.semester,
+                            groupNumber: serverData.groupNumber,
+                            overwrite: true
+                        })
+                    });
+                    
+                    const overwriteResult = await overwriteResponse.json();
+                    
+                    if (!overwriteResult.success) {
+                        throw new Error(overwriteResult.message || 'Error al sobreescribir el plan');
+                    }
+                    
+                    if (typeof showToast === 'function') {
+                        showToast('Plan sobreescrito exitosamente', 'success');
+                    }
+                    
+                } else if (!savePlanResult.success) {
                     throw new Error(savePlanResult.message || 'Error al agregar el plan');
+                } else {
+                    // Plan guardado exitosamente (primer vez)
+                    if (typeof showToast === 'function') {
+                        showToast('Plan guardado exitosamente', 'success');
+                    }
                 }
                 
                 // Guardar notas si hay alguna
@@ -408,18 +459,46 @@
                     
                     const result = await response.json();
                     
-                    if (result.success) {
+                    // Verificar si requiere confirmación para sobreescribir
+                    if (response.status === 409 && result.needsConfirmation && result.action === 'overwrite_for_grades') {
+                        // Mostrar modal de confirmación de sobreescritura para notas
+                        const shouldOverwriteGrades = await showOverwriteConfirmationModal(result.existingPlan, result.newPlan, 'grades');
+                        
+                        if (shouldOverwriteGrades) {
+                            // Confirmar sobreescritura de notas
+                            const overwriteGradesResponse = await fetch('/api/save-grades/' + planId + '/confirm', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    grades: grades,
+                                    overwrite: true
+                                })
+                            });
+                            
+                            const overwriteGradesResult = await overwriteGradesResponse.json();
+                            
+                            if (overwriteGradesResult.success) {
+                                if (typeof showToast === 'function') {
+                                    showToast('Plan sobreescrito y notas sincronizadas exitosamente', 'success');
+                                }
+                            } else {
+                                throw new Error(overwriteGradesResult.message || 'Error al sobreescribir el plan para las notas');
+                            }
+                        } else {
+                            if (typeof showToast === 'function') {
+                                showToast('Plan guardado (notas no sincronizadas)', 'warning');
+                            }
+                        }
+                    } else if (result.success) {
                         if (typeof showToast === 'function') {
-                            showToast('Plan guardado y notas sincronizadas', 'success');
+                            showToast('Notas sincronizadas exitosamente', 'success');
                         }
                     } else {
                         if (typeof showToast === 'function') {
                             showToast('Plan guardado (error al sincronizar notas)', 'warning');
                         }
-                    }
-                } else {
-                    if (typeof showToast === 'function') {
-                        showToast('Plan guardado exitosamente', 'success');
                     }
                 }
                 
@@ -435,14 +514,15 @@
                 
             } catch (error) {
                 console.error('Error al guardar plan:', error);
-                if (typeof showToast === 'function') {
-                    showToast('Error: ' + error.message, 'error');
-                }
                 
-                // Rehabilitar botón
+                // Restaurar botón en caso de error
                 const savePlanBtn = document.getElementById('savePlanBtn');
                 savePlanBtn.disabled = false;
                 savePlanBtn.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Guardar Plan en Mis Materias';
+                
+                if (typeof showToast === 'function') {
+                    showToast(error.message || 'Error al guardar el plan', 'error');
+                }
             }
         };
 
@@ -455,40 +535,7 @@
             const planActivities = serverData.planActivities;
             const planId = serverData.planId;
             
-            // Verificar si es estudiante y si tiene el plan guardado
-            if (serverData.user && serverData.user.role === 'student') {
-                try {
-                    const response = await fetch('/api/check-saved-plan/' + planId);
-                    const result = await response.json();
-                    
-                    if (result.success && !result.isSaved) {
-                        // El plan no está guardado, preguntar si quiere guardarlo
-                        console.log('Plan no guardado, mostrando modal...');
-                        const shouldSave = await showSavePlanModal();
-                        console.log('Respuesta del modal:', shouldSave);
-                        
-                        if (shouldSave) {
-                            // Guardar el plan primero
-                            await savePlanToMyCourses();
-                            
-                            // Mostrar mensaje de éxito
-                            if (typeof showToast === 'function') {
-                                showToast('Plan guardado. Calculando notas mínimas...', 'success');
-                            }
-                        } else {
-                            // Usuario decidió no guardar, mostrar mensaje informativo
-                            if (typeof showToast === 'function') {
-                                showToast('Calculando notas mínimas...', 'info');
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al verificar plan guardado:', error);
-                    // Continuar con el cálculo aunque haya error
-                }
-            }
-            
-            // SIEMPRE continuar con el cálculo de notas mínimas
+            // SIEMPRE calcular notas mínimas directamente, sin modal
             console.log('Ejecutando cálculo de notas mínimas...');
             
             const targetGrade = parseFloat(document.getElementById('targetGrade').value);
@@ -520,82 +567,120 @@
             console.log('Cálculo de notas mínimas completado');
         };
         
-        // Función para mostrar modal de confirmación para guardar plan
-        window.showSavePlanModal = function() {
+        // Función para mostrar modal de confirmación de sobreescritura
+        window.showOverwriteConfirmationModal = function(existingPlan, newPlan, context = 'plan') {
             return new Promise((resolve) => {
                 // Crear modal dinámicamente
-                const modalHTML = 
-                    '<div class="modal fade" id="savePlanModal" tabindex="-1" aria-hidden="true">' +
-                        '<div class="modal-dialog modal-dialog-centered">' +
-                            '<div class="modal-content">' +
-                                '<div class="modal-header">' +
-                                    '<h5 class="modal-title">' +
-                                        '<i class="bi bi-question-circle text-primary me-2"></i>' +
-                                        'Guardar Plan de Evaluación' +
-                                    '</h5>' +
-                                    '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
-                                '</div>' +
-                                '<div class="modal-body">' +
-                                    '<div class="text-center mb-3">' +
-                                        '<i class="bi bi-bookmark-plus text-success" style="font-size: 3rem;"></i>' +
-                                    '</div>' +
-                                    '<p class="text-center mb-3">' +
-                                        '<strong>¿Te gustaría guardar este plan en tus materias?</strong>' +
-                                    '</p>' +
-                                    '<p class="text-muted text-center mb-0">' +
-                                        'Esto te permitirá acceder rápidamente al plan y guardar tus notas de forma permanente.' +
-                                    '</p>' +
-                                '</div>' +
-                                '<div class="modal-footer">' +
-                                    '<button type="button" id="noSaveBtn" class="btn btn-secondary" data-bs-dismiss="modal">' +
-                                        'No, solo calcular' +
-                                    '</button>' +
-                                    '<button type="button" id="yesSaveBtn" class="btn btn-success" data-bs-dismiss="modal">' +
-                                        '<i class="bi bi-check-lg me-2"></i>Sí, guardar plan' +
-                                    '</button>' +
-                                '</div>' +
-                            '</div>' +
-                        '</div>' +
-                    '</div>';
+                const isGradesContext = context === 'grades';
+                const actionText = isGradesContext ? 'registrar estas notas' : 'guardar este plan';
+                const warningText = isGradesContext 
+                    ? 'Si continúas, se eliminará tu plan actual y se registrarán las notas en este nuevo plan.'
+                    : 'Si continúas, se eliminará tu plan actual y se guardará este nuevo plan.';
+                
+                const modalHtml = `
+                    <div class="modal fade" id="overwriteConfirmationModal" tabindex="-1" aria-labelledby="overwriteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-warning text-dark">
+                                    <h5 class="modal-title" id="overwriteModalLabel">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        ¿Sobreescribir Plan Existente?
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>Ya tienes un plan guardado para este curso.</strong> ${warningText}
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card border-danger">
+                                                <div class="card-header bg-danger text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="bi bi-trash me-2"></i>Plan Actual (Se eliminará)
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p><strong>Plan:</strong> ${existingPlan.planName}</p>
+                                                    <p><strong>Curso:</strong> ${existingPlan.subjectCode}</p>
+                                                    <p><strong>Semestre:</strong> ${existingPlan.semester}</p>
+                                                    <p><strong>Grupo:</strong> ${existingPlan.groupNumber}</p>
+                                                    <p><strong>Nota Actual:</strong> ${existingPlan.currentGrade ? existingPlan.currentGrade.toFixed(2) : '0.00'}</p>
+                                                    <p><strong>Actividades:</strong> ${existingPlan.completedActivities}/${existingPlan.activitiesCount} completadas</p>
+                                                    <p><strong>Guardado:</strong> ${new Date(existingPlan.savedAt).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card border-success">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="bi bi-plus-circle me-2"></i>Nuevo Plan
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <p><strong>Plan:</strong> ${newPlan.name}</p>
+                                                    <p><strong>Actividades:</strong> ${newPlan.activitiesCount} actividades</p>
+                                                    <p class="text-muted">${isGradesContext ? 'Las notas se registrarán en este plan' : 'Este plan reemplazará completamente al actual'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    ${existingPlan.completedActivities > 0 ? `
+                                        <div class="alert alert-danger mt-3">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <strong>¡Atención!</strong> Tu plan actual tiene ${existingPlan.completedActivities} actividades con notas que se perderán permanentemente.
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" id="cancelOverwriteBtn">
+                                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                                    </button>
+                                    <button type="button" class="btn btn-danger" id="confirmOverwriteBtn">
+                                        <i class="bi bi-arrow-repeat me-2"></i>Sí, Sobreescribir Plan
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Eliminar modal existente si existe
+                const existingModal = document.getElementById('overwriteConfirmationModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
                 
                 // Agregar modal al DOM
-                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
                 
-                // Agregar event listeners a los botones
-                const noSaveBtn = document.getElementById('noSaveBtn');
-                const yesSaveBtn = document.getElementById('yesSaveBtn');
+                // Obtener elementos
+                const modal = new bootstrap.Modal(document.getElementById('overwriteConfirmationModal'));
+                const confirmBtn = document.getElementById('confirmOverwriteBtn');
+                const cancelBtn = document.getElementById('cancelOverwriteBtn');
                 
-                noSaveBtn.addEventListener('click', function() {
-                    resolve(false);
-                    cleanupModal();
-                });
-                
-                yesSaveBtn.addEventListener('click', function() {
+                // Event listeners
+                confirmBtn.addEventListener('click', () => {
+                    modal.hide();
                     resolve(true);
-                    cleanupModal();
                 });
                 
-                // Función para limpiar el modal
-                function cleanupModal() {
-                    setTimeout(function() {
-                        const modal = document.getElementById('savePlanModal');
-                        if (modal) {
-                            modal.remove();
-                        }
-                    }, 300);
-                }
+                cancelBtn.addEventListener('click', () => {
+                    modal.hide();
+                    resolve(false);
+                });
                 
-                // Mostrar modal usando Bootstrap JS
-                const modalElement = document.getElementById('savePlanModal');
-                if (typeof bootstrap !== 'undefined') {
-                    const bsModal = new bootstrap.Modal(modalElement);
-                    bsModal.show();
-                } else {
-                    // Fallback: mostrar modal manualmente
-                    modalElement.style.display = 'block';
-                    modalElement.classList.add('show');
-                    document.body.classList.add('modal-open');
-                }
+                // Manejar cerrar modal con X o fuera de él
+                document.getElementById('overwriteConfirmationModal').addEventListener('hidden.bs.modal', () => {
+                    document.getElementById('overwriteConfirmationModal').remove();
+                });
+                
+                // Mostrar modal
+                modal.show();
             });
         };
 
