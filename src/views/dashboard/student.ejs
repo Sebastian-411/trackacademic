@@ -356,6 +356,29 @@
     <script>
         // Manejar scroll automático cuando se accede con hash
         document.addEventListener('DOMContentLoaded', function() {
+            // Debug: Verificar estado del usuario
+            console.log('Usuario en sesión:', '<%= JSON.stringify(user) %>');
+            console.log('Ubicación actual:', window.location.href);
+
+            // Manejar click del botón de búsqueda
+            const searchBtn = document.getElementById('searchPlansBtn');
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function(e) {
+                    console.log('Botón clickeado, redirigiendo a /courses/search');
+                    console.log('Base URL:', window.location.origin);
+                    
+                    try {
+                        const targetUrl = '/courses/search';
+                        console.log('URL de destino:', targetUrl);
+                        window.location.href = targetUrl;
+                    } catch (error) {
+                        console.error('Error en redirección:', error);
+                        // Método alternativo
+                        window.location.assign('/courses/search');
+                    }
+                });
+            }
+
             // Verificar si hay un hash en la URL
             if (window.location.hash === '#mis-planes') {
                 // Esperar un poco para que el contenido se cargue

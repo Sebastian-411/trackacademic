@@ -711,4 +711,51 @@ body {
 /* Asegurar que todos los componentes Bootstrap respeten el tema claro */
 [data-bs-theme="light"], .light-theme {
   color-scheme: light !important;
+}
+
+/* =================================================================
+   ESTILO ESPECÍFICO PARA BOTÓN "NUEVA VERSIÓN"
+   ================================================================= */
+
+.btn-nueva-version {
+  border: 2px solid var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  background: white !important;
+  font-weight: 600 !important;
+  border-radius: var(--border-radius-sm) !important;
+  padding: 0.75rem 1.5rem !important;
+  transition: var(--transition) !important;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.btn-nueva-version::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-nueva-version:hover {
+  background: var(--primary-color) !important;
+  color: white !important;
+  border-color: var(--primary-color) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3) !important;
+}
+
+.btn-nueva-version:hover::before {
+  left: 100%;
+}
+
+.btn-nueva-version:focus {
+  background: white !important;
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15) !important;
 } 
