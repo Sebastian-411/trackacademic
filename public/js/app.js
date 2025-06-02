@@ -1,9 +1,108 @@
 // Trackademic App JavaScript
 class TrackademicApp {
     constructor() {
+        // IMPORTANTE: Forzar el tema claro inmediatamente para prevenir cualquier flash de modo oscuro
+        this.forceLightTheme();
         this.init();
         this.setupEventListeners();
         this.setupUtils();
+    }
+
+    forceLightTheme() {
+        // Forzar tema claro en el documento principal
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+        document.documentElement.style.colorScheme = 'light';
+        
+        // Asegurar que el body también tenga el esquema de colores correcto
+        if (document.body) {
+            document.body.style.colorScheme = 'light';
+        }
+        
+        // Observador para prevenir cualquier cambio a modo oscuro
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                    if (document.documentElement.getAttribute('data-bs-theme') !== 'light') {
+                        document.documentElement.setAttribute('data-bs-theme', 'light');
+                        console.warn('Tema oscuro bloqueado - manteniendo tema claro');
+                    }
+                }
+            });
+        });
+        
+        // Observar cambios en los atributos del documento
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-bs-theme', 'class']
+        });
+        
+        // Forzar tema claro cuando el DOM esté completamente cargado
+        document.addEventListener('DOMContentLoaded', () => {
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+            document.documentElement.style.colorScheme = 'light';
+            if (document.body) {
+                document.body.style.colorScheme = 'light';
+            }
+        });
+        
+        // Crear e inyectar CSS personalizado para sobrescribir cualquier preferencia de modo oscuro
+        this.injectLightThemeCSS();
+        
+        console.info('Tema claro forzado y protegido contra cambios');
+    }
+    
+    injectLightThemeCSS() {
+        // Crear un elemento style para sobrescribir CSS de modo oscuro
+        const style = document.createElement('style');
+        style.id = 'force-light-theme';
+        style.textContent = `
+            /* TEMA CLARO FORZADO - NO MODIFICAR */
+            * {
+                color-scheme: light !important;
+            }
+            
+            html, body {
+                color-scheme: light !important;
+                background-color: #ffffff !important;
+            }
+            
+            /* Anular cualquier preferencia de modo oscuro del sistema */
+            @media (prefers-color-scheme: dark) {
+                *, *::before, *::after {
+                    color-scheme: light !important;
+                }
+                
+                html, body {
+                    background-color: #ffffff !important;
+                    color: #212529 !important;
+                }
+                
+                .navbar, .navbar-custom {
+                    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+                }
+                
+                .card, .modal-content, .dropdown-menu {
+                    background-color: #ffffff !important;
+                    color: #212529 !important;
+                }
+                
+                .form-control, .form-select {
+                    background-color: #ffffff !important;
+                    color: #212529 !important;
+                    border-color: #ced4da !important;
+                }
+            }
+            
+            /* Asegurar que Bootstrap respete el tema claro */
+            [data-bs-theme="light"] *,
+            [data-bs-theme="light"] *::before,
+            [data-bs-theme="light"] *::after {
+                color-scheme: light !important;
+            }
+        `;
+        
+        // Insertar el estilo al inicio del head para máxima prioridad
+        document.head.insertBefore(style, document.head.firstChild);
     }
 
     init() {

@@ -1,3 +1,9 @@
+/* =================================================================
+   TRACKADEMIC - TEMA CLARO FORZADO
+   IMPORTANTE: Esta aplicación funciona únicamente en modo claro
+   No se permite modo oscuro bajo ninguna circunstancia
+   ================================================================= */
+
 /* Variables CSS */
 :root {
   --primary-color: #2563eb;
@@ -30,6 +36,24 @@
   --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --box-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Forzar esquema de colores claro */
+  color-scheme: light !important;
+}
+
+/* =================================================================
+   FORZAR TEMA CLARO EN TODA LA APLICACIÓN
+   ================================================================= */
+
+/* Forzar tema claro en todos los elementos */
+*, *::before, *::after {
+  color-scheme: light !important;
+}
+
+/* Forzar tema claro en elementos principales */
+html {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
 }
 
 /* General Styles */
@@ -40,6 +64,7 @@ body {
   background-color: var(--gray-50);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: light !important;
 }
 
 * {
@@ -581,37 +606,6 @@ body {
   }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --gray-50: #1f2937;
-    --gray-100: #374151;
-    --light-color: #374151;
-    --dark-color: #f9fafb;
-  }
-  
-  body {
-    background-color: var(--gray-900);
-    color: var(--gray-100);
-  }
-  
-  .card {
-    background: var(--gray-800);
-    color: var(--gray-100);
-  }
-  
-  .table {
-    background: var(--gray-800);
-    color: var(--gray-100);
-  }
-  
-  .form-control {
-    background: var(--gray-700);
-    border-color: var(--gray-600);
-    color: var(--gray-100);
-  }
-}
-
 /* Utility Classes */
 .text-gradient {
   background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
@@ -656,4 +650,65 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--gray-500);
+}
+
+/* =================================================================
+   ANULAR COMPLETAMENTE CUALQUIER MODO OSCURO
+   ================================================================= */
+
+/* Anular preferencias del sistema operativo */
+@media (prefers-color-scheme: dark) {
+  *, *::before, *::after {
+    color-scheme: light !important;
+  }
+  
+  html, body {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+  }
+  
+  /* Mantener navbar con colores correctos */
+  .navbar, .navbar-custom {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: white !important;
+  }
+  
+  /* Forzar componentes de Bootstrap en tema claro */
+  .card, .modal-content, .dropdown-menu, .offcanvas {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border-color: #dee2e6 !important;
+  }
+  
+  .form-control, .form-select, .form-check-input {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+    border-color: #ced4da !important;
+  }
+  
+  .table {
+    background-color: #ffffff !important;
+    color: #212529 !important;
+  }
+  
+  .table-light {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+  }
+  
+  .btn {
+    color: inherit !important;
+  }
+}
+
+/* Prevenir cambios de tema mediante JavaScript */
+[data-bs-theme="dark"], [data-theme="dark"], .dark-theme {
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #212529 !important;
+}
+
+/* Asegurar que todos los componentes Bootstrap respeten el tema claro */
+[data-bs-theme="light"], .light-theme {
+  color-scheme: light !important;
 } 
