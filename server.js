@@ -11,7 +11,7 @@ require('dotenv').config();
 const { connectMongoDB } = require('./src/config/database');
 const logger = require('./src/utils/logger');
 const { errorHandler } = require('./src/middleware/errorHandler');
-const swaggerSetup = require('./src/config/swagger');
+const setupSwagger = require('./src/config/swagger');
 
 // Importar rutas API
 const authRoutes = require('./src/routes/auth');
@@ -75,7 +75,7 @@ app.use(session({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Configurar Swagger
-swaggerSetup(app);
+setupSwagger(app);
 
 // Rutas de la aplicación web
 app.use('/', webRoutes);

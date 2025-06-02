@@ -1,221 +1,309 @@
-# Trackademic Backend
+# Trackademic - Sistema de Gestión Académica
 
-Backend completo para la aplicación Trackademic - Sistema de gestión de notas y planes de evaluación académicos.
+**Sistema completo de gestión de notas y planes de evaluación académicos con enfoque estudiantil**
 
-## 🚀 Características
+## 🚀 Características Principales
 
-### Funcionalidades Principales
+### ✨ Nuevas Funcionalidades Implementadas
 
-- **Autenticación y Autorización** con Supabase Auth
-- **Gestión de Planes de Evaluación** (CRUD completo)
-- **Sistema de Calificaciones** con proyecciones automáticas
-- **Sistema Colaborativo** con comentarios y respuestas
-- **Informes Avanzados** para estudiantes y coordinadores
-- **API REST** completamente documentada con Swagger
-- **Control de Roles** (estudiante, profesor, coordinador, admin)
+- **🎨 Tema Claro Forzado** - Interfaz optimizada exclusivamente en modo claro
+- **📚 Documentación API Completa** - Swagger UI integrado con todos los endpoints
+- **👨‍🎓 Sistema Orientado a Estudiantes** - Funcionalidades diseñadas para el rol estudiantil
+- **🔄 Calculadora de Notas Inteligente** - Proyecciones automáticas y seguimiento en tiempo real
+- **📊 Gestión de Planes Personales** - Guardar y gestionar planes de evaluación propios
 
-### Tecnologías Utilizadas
+### 🎓 Funcionalidades Académicas
+
+- **Autenticación Segura** con Supabase Auth
+- **Gestión de Planes de Evaluación** (visualización y uso)
+- **Sistema de Calificaciones Personal** con proyecciones automáticas
+- **Búsqueda Avanzada de Cursos** con filtros múltiples
+- **Reportes Académicos** personalizados para estudiantes
+- **Sistema de Comentarios** en planes de evaluación
+- **Dashboard Estudiantil** con estadísticas y progreso
+
+## 🛠️ Tecnologías
 
 - **Node.js** + **Express.js** - Servidor backend
 - **Supabase** - Base de datos SQL y autenticación
 - **MongoDB** - Base de datos NoSQL para planes y calificaciones
-- **Mongoose** - ODM para MongoDB
-- **Swagger** - Documentación automática de API
-- **Winston** - Sistema de logging
-- **JWT** - Tokens de autenticación
+- **Swagger/OpenAPI 3.0** - Documentación automática de API
+- **EJS** - Motor de plantillas
+- **Bootstrap 5** - Framework CSS (tema claro forzado)
+- **Winston** - Sistema de logging avanzado
 
 ## 📋 Prerrequisitos
 
 - Node.js (v18 o superior)
 - MongoDB (v6 o superior)
-- Cuenta de Supabase
+- Cuenta de Supabase activa
 - npm o yarn
 
-## ⚡ Instalación Rápida
+## ⚡ Instalación
 
-### 1. Clonar el repositorio
+### 1. Clonar y preparar
 ```bash
 git clone <repository-url>
-cd trackademic-backend
-```
-
-### 2. Instalar dependencias
-```bash
+cd trackademic
 npm install
 ```
 
-### 3. Configurar variables de entorno
+### 2. Configurar variables de entorno
 ```bash
-cp env.example .env
+cp .env.example .env
 ```
 
-Edita el archivo `.env` con tus credenciales:
-
+**Configuración esencial en `.env`:**
 ```env
-# Configuración del servidor
+# Servidor
 PORT=3000
 NODE_ENV=development
 
-# Supabase
-SUPABASE_URL=your_supabase_url
+# Supabase (requerido)
+SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-# MongoDB
+# MongoDB (requerido)
 MONGODB_URI=mongodb://localhost:27017/trackademic
 
-# JWT
-JWT_SECRET=your_super_secret_jwt_key
-JWT_EXPIRES_IN=7d
+# Sesiones
+SESSION_SECRET=your-super-secure-session-secret
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
-
-# Logs
-LOG_LEVEL=info
 ```
 
-### 4. Configurar Supabase
+### 3. Configurar Supabase
+1. Ejecuta el schema SQL en tu proyecto de Supabase
+2. Configura autenticación en Authentication > Settings
+3. Habilita registro de usuarios
 
-#### Ejecutar el schema SQL
-En tu proyecto de Supabase, ejecuta el archivo `sql/schema.sql` para crear las tablas necesarias.
-
-#### Configurar autenticación
-1. Ve a Authentication > Settings en tu dashboard de Supabase
-2. Configura los providers de autenticación que necesites
-3. Asegúrate de que el registro de usuarios esté habilitado
-
-### 5. Iniciar el servidor
+### 4. Iniciar aplicación
 ```bash
-# Desarrollo
+# Desarrollo con auto-restart
 npm run dev
 
 # Producción
 npm start
 ```
 
-El servidor estará disponible en `http://localhost:3000`
+**🌐 URLs de acceso:**
+- **Aplicación**: `http://localhost:3000`
+- **Documentación API**: `http://localhost:3000/api-docs`
+- **Especificación OpenAPI**: `http://localhost:3000/api-docs.json`
+- **Info API**: `http://localhost:3000/api-info`
 
-## 📚 Documentación de la API
+## 📚 Documentación API Completa
 
-### Swagger UI
-Una vez que el servidor esté corriendo, puedes acceder a la documentación interactiva en:
+### 🎯 Swagger UI Interactivo
+Accede a la documentación completa e interactiva en:
 ```
 http://localhost:3000/api-docs
 ```
 
-### Endpoints Principales
+**Características de la documentación:**
+- ✅ **Todos los controladores documentados**
+- ✅ **Esquemas de datos detallados**
+- ✅ **Ejemplos realistas** en cada endpoint
+- ✅ **Códigos de estado HTTP** precisos
+- ✅ **Autenticación basada en sesiones**
+- ✅ **Interfaz moderna** con tema Trackademic
 
-#### Autenticación
-- `POST /api/auth/login` - Iniciar sesión
-- `POST /api/auth/register` - Registrarse (solo estudiantes)
-- `POST /api/auth/logout` - Cerrar sesión
-- `GET /api/auth/profile` - Obtener perfil del usuario
+### 🔗 Endpoints Principales Documentados
 
-#### Planes de Evaluación
-- `GET /api/evaluation-plans` - Listar planes
-- `POST /api/evaluation-plans` - Crear plan
-- `GET /api/evaluation-plans/:id` - Obtener plan específico
-- `PUT /api/evaluation-plans/:id` - Actualizar plan
-- `DELETE /api/evaluation-plans/:id` - Eliminar plan
-- `POST /api/evaluation-plans/:id/approve` - Aprobar plan
+#### 🔐 **Autenticación**
+```
+POST /login          # Iniciar sesión
+POST /register       # Registro de estudiantes
+POST /logout         # Cerrar sesión
+GET  /dashboard      # Panel principal
+```
 
-#### Calificaciones
-- `GET /api/grades` - Obtener calificaciones del usuario
-- `POST /api/grades` - Crear registro de calificaciones
-- `POST /api/grades/:id/activities` - Agregar calificación de actividad
-- `GET /api/grades/:id/projections` - Obtener proyecciones
-- `PUT /api/grades/:id/target` - Actualizar calificación objetivo
+#### 📋 **Planes de Evaluación**
+```
+GET  /evaluation-plans/{id}       # Ver plan específico
+GET  /evaluation-plans/{id}/edit  # Formulario de edición
+PUT  /api/evaluation-plans/{id}   # Actualizar plan
+GET  /api/evaluation-plans/{id}/stats # Estadísticas del plan
+```
 
-#### Comentarios
-- `GET /api/comments/plan/:planId` - Comentarios de un plan
-- `POST /api/comments` - Crear comentario
-- `POST /api/comments/:id/like` - Dar/quitar like
-- `POST /api/comments/:id/replies` - Agregar respuesta
+#### 👨‍🎓 **Planes de Estudiantes** (Nuevos)
+```
+GET    /api/my-plans                    # Mis planes guardados
+POST   /api/evaluation-plans/{id}/save # Guardar plan personal
+PUT    /api/student-plans/{id}/grades  # Actualizar calificaciones
+DELETE /api/my-plans/{id}              # Eliminar plan personal
+GET    /api/student-plans/{id}         # Detalles con plan original
+```
 
-#### Información Académica
-- `GET /api/academic/faculties` - Listar facultades
-- `GET /api/academic/subjects` - Listar materias
-- `GET /api/academic/groups` - Listar grupos
-- `GET /api/academic/professors` - Listar profesores
+## 🎨 Tema Claro Forzado
 
-#### Reportes
-- `GET /api/reports/student-performance/:userId` - Informe de rendimiento
-- `GET /api/reports/subject-analytics/:subjectCode` - Analíticas de materia
-- `GET /api/reports/faculty-dashboard/:facultyCode` - Dashboard de facultad
-- `GET /api/reports/grade-projections` - Proyecciones de calificaciones
+### ✨ Implementación Completa
+La aplicación funciona **exclusivamente en modo claro** con:
 
-## 🔐 Sistema de Roles
+**🔧 Componentes implementados:**
+- **CSS forzado** con `!important` para tema claro
+- **JavaScript enforcer** que intercepta cambios de tema
+- **Meta tags** con `color-scheme: light only`
+- **Templates actualizados** con `data-bs-theme="light"`
+- **Observadores DOM** para prevenir cambios automáticos
+- **Soporte CSP** para Swagger UI
 
-### Estudiante (student)
-- Ver planes de evaluación aprobados
-- Gestionar sus propias calificaciones
-- Comentar en planes aprobados
-- Ver sus informes de rendimiento
+**🛡️ Prevención automática de:**
+- Cambios por preferencias del sistema
+- Modificaciones de JavaScript externo
+- Alteraciones dinámicas del DOM
+- Detectores de modo oscuro
 
-### Profesor (professor)
-- Crear y gestionar sus planes de evaluación
-- Ver comentarios en sus planes
-- Acceder a analíticas de sus materias
+## 👨‍🎓 Sistema Orientado a Estudiantes
 
-### Coordinador (coordinator)
-- Aprobar planes de evaluación de su facultad
-- Ver dashboard de la facultad
-- Acceder a informes de profesores de su facultad
-- Resolver comentarios
+### 🎯 Funcionalidades Principales
 
-### Administrador (admin)
-- Acceso completo a todas las funcionalidades
-- Gestionar usuarios y roles
-- Ver todos los reportes y analíticas
+#### **📊 Dashboard Estudiantil**
+- Resumen de materias por semestre
+- Promedio general y estadísticas
+- Actividades pendientes
+- Progreso visual por materia
 
-## 📊 Base de Datos
+#### **🔍 Búsqueda de Cursos**
+- Filtros por materia, profesor, semestre
+- Visualización de planes de evaluación
+- Información detallada de grupos
 
-### SQL (Supabase)
-Información académica institucional:
-- Facultades, programas, materias
+#### **📝 Gestión de Notas Personal**
+- Calculadora de notas inteligente
+- Proyecciones automáticas
+- Seguimiento de progreso
+- Notas y comentarios personales
+
+#### **💾 Mis Planes Guardados**
+- Guardar planes de evaluación de interés
+- Gestión personal de múltiples planes
+- Calculadora integrada por plan
+- Historial de calificaciones
+
+#### **📈 Reportes Personalizados**
+- Informe de rendimiento académico
+- Reporte de calificaciones detallado
+- Proyecciones de notas finales
+- Análisis de tendencias
+
+### 🔐 Roles del Sistema
+
+#### 👨‍🎓 **Estudiante** (Rol Principal)
+- ✅ Ver todos los planes de evaluación aprobados
+- ✅ Guardar planes de evaluación personales
+- ✅ Usar calculadora de notas integrada
+- ✅ Gestionar calificaciones propias
+- ✅ Comentar en planes de evaluación
+- ✅ Generar reportes académicos personales
+- ✅ Buscar cursos y profesores
+- ✅ Ver dashboard con estadísticas
+
+#### 👨‍🏫 **Profesor** (Soporte)
+- Crear y gestionar planes de evaluación
+- Ver estadísticas de uso de sus planes
+- Responder comentarios de estudiantes
+
+#### 👨‍💼 **Coordinador** (Administrativo)
+- Aprobar planes de evaluación
+- Ver reportes de facultad
+- Gestionar profesores
+
+#### 🔧 **Administrador** (Sistema)
+- Acceso completo al sistema
+- Gestión de usuarios y roles
+
+## 📊 Arquitectura de Datos
+
+### 🗄️ **MongoDB** (Datos Dinámicos)
+```javascript
+// Planes de Evaluación
+{
+  subjectCode: "MATH101",
+  semester: "2024-1",
+  groupNumber: 1,
+  activities: [
+    { name: "Parcial 1", percentage: 30 },
+    { name: "Proyecto", percentage: 40 },
+    { name: "Final", percentage: 30 }
+  ],
+  versionName: "Plan Principal",
+  isMainVersion: true,
+  usageCount: 15
+}
+
+// Planes de Estudiantes
+{
+  studentId: "user_123",
+  evaluationPlanId: ObjectId,
+  subjectCode: "MATH101",
+  activities: [
+    { name: "Parcial 1", percentage: 30, score: 4.2 },
+    { name: "Proyecto", percentage: 40, score: null }
+  ],
+  currentGrade: 1.26,
+  progress: 30
+}
+```
+
+### 🏛️ **Supabase** (Datos Institucionales)
 - Empleados (profesores, coordinadores)
+- Materias y programas académicos
 - Grupos y semestres
-- Sedes y ubicaciones
+- Facultades y sedes
 
-### MongoDB
-Datos dinámicos de la aplicación:
-- Planes de evaluación
-- Calificaciones de estudiantes
-- Comentarios y respuestas
-- Metadatos y configuraciones
+## 🔧 Funcionalidades Avanzadas
 
-## 🔧 Configuración Avanzada
+### 🧮 **Calculadora de Notas Inteligente**
+```javascript
+// Proyecciones automáticas
+const calcularProyeccion = (notaObjetivo, actividadesCompletadas, actividadesPendientes) => {
+  const contribucionActual = actividadesCompletadas.reduce((sum, act) => 
+    sum + (act.score * act.percentage / 100), 0);
+  
+  const porcentajePendiente = actividadesPendientes.reduce((sum, act) => 
+    sum + act.percentage, 0);
+  
+  const notaRequerida = (notaObjetivo - contribucionActual) * 100 / porcentajePendiente;
+  
+  return {
+    esAlcanzable: notaRequerida <= 5.0,
+    notaMinima: Math.max(0, notaRequerida),
+    recomendacion: generarRecomendacion(notaRequerida)
+  };
+};
+```
 
-### Rate Limiting
-El sistema incluye limitación de velocidad configurada por defecto:
-- 100 requests por 15 minutos por IP
-- Configurable a través de variables de entorno
+### 📱 **Interfaz Responsiva**
+- **Móvil**: Navegación optimizada para pantallas pequeñas
+- **Tablet**: Layout adaptativo con sidebars colapsables
+- **Desktop**: Interfaz completa con múltiples paneles
 
-### Logging
-Sistema de logs con Winston:
-- Logs de aplicación en `logs/combined.log`
-- Logs de errores en `logs/error.log`
-- Nivel de log configurable
+### 🔒 **Seguridad Implementada**
+- Autenticación con Supabase Auth
+- Sesiones seguras con MongoDB Store
+- Rate limiting (100 req/15min)
+- Validación de entrada en todos los endpoints
+- Headers de seguridad con Helmet
+- CSP configurado para Swagger
 
-### Validación
-- Validación de entrada con Joi
-- Middleware de validación personalizado
-- Manejo de errores centralizado
+## 🚀 Despliegue y Producción
 
-## 🚀 Despliegue
-
-### Variables de Entorno de Producción
+### 📦 **Variables de Entorno de Producción**
 ```env
 NODE_ENV=production
 PORT=3000
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/trackademic
 SUPABASE_URL=https://your-project.supabase.co
-# ... resto de variables
+SUPABASE_ANON_KEY=your_production_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_production_service_key
+SESSION_SECRET=super-secure-production-secret
 ```
 
-### Docker (Opcional)
+### 🐳 **Docker Support**
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
@@ -226,7 +314,7 @@ EXPOSE 3000
 CMD ["npm", "start"]
 ```
 
-## 📋 Scripts Disponibles
+## 📋 Scripts de Desarrollo
 
 ```bash
 # Desarrollo con auto-restart
@@ -238,96 +326,160 @@ npm start
 # Tests (cuando estén implementados)
 npm test
 
-# Linting (cuando esté configurado)
-npm run lint
+# Verificación de salud del servidor
+curl http://localhost:3000/health
 ```
 
-## 🔍 Características Técnicas
+## 🔍 Monitoreo y Logs
 
-### Arquitectura
-- **Arquitectura REST** bien estructurada
-- **Separación de responsabilidades** (routes, controllers, models)
-- **Middleware** reutilizable para autenticación y autorización
-- **Manejo de errores** centralizado y consistente
+### 📊 **Sistema de Logging**
+```javascript
+// Configuración Winston
+{
+  levels: { error: 0, warn: 1, info: 2, debug: 3 },
+  transports: [
+    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
+    new winston.transports.File({ filename: 'logs/combined.log' }),
+    new winston.transports.Console({ format: winston.format.simple() })
+  ]
+}
+```
 
-### Seguridad
-- **Autenticación JWT** con Supabase
-- **Validación de entrada** en todas las rutas
-- **Rate limiting** para prevenir abuso
-- **Sanitización** de datos de entrada
-- **Headers de seguridad** con Helmet
-
-### Performance
-- **Índices optimizados** en MongoDB
-- **Paginación** en endpoints de listado
-- **Poblado selectivo** de datos relacionados
-- **Caché** de consultas frecuentes (donde aplique)
+### 🏥 **Health Check**
+```bash
+GET /health
+{
+  "status": "OK",
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "environment": "production"
+}
+```
 
 ## 🐛 Resolución de Problemas
 
-### Errores Comunes
+### ❌ **Errores Comunes**
 
-#### Error de conexión a MongoDB
+#### **MongoDB Connection**
 ```bash
 Error: connect ECONNREFUSED 127.0.0.1:27017
 ```
-**Solución**: Asegúrate de que MongoDB esté corriendo localmente o verifica la URI de conexión.
+**Solución**: Verificar que MongoDB esté ejecutándose:
+```bash
+# macOS/Linux
+brew services start mongodb-community
+# Windows
+net start MongoDB
+```
 
-#### Error de Supabase
+#### **Supabase Authentication**
 ```bash
 Error: Invalid API key
 ```
-**Solución**: Verifica que las variables `SUPABASE_URL` y `SUPABASE_ANON_KEY` estén correctamente configuradas.
-
-#### Error de permisos
-```bash
-403 Forbidden
+**Solución**: Verificar variables en `.env`:
+```env
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_ANON_KEY=eyJ...tu-clave-completa
 ```
-**Solución**: Verifica que el usuario tenga el rol correcto para la operación solicitada.
 
-### Logs de Debug
-Para activar logs detallados:
+#### **Tema No Forzado**
+Si aparece modo oscuro:
+1. Verificar que `light-theme-enforcer.js` se carga
+2. Revisar CSP en browser developer tools
+3. Confirmar que CSS tiene `!important`
+
+### 🔧 **Debug Mode**
 ```env
 LOG_LEVEL=debug
 NODE_ENV=development
 ```
 
+## 📈 Roadmap
+
+### 🎯 **Próximas Funcionalidades**
+- [ ] Sistema de notificaciones en tiempo real
+- [ ] Integración con calendario académico
+- [ ] Reportes avanzados con gráficos
+- [ ] Sistema de backup automático
+- [ ] API móvil nativa
+- [ ] Integración con LMS externos
+
+### 🔮 **Funcionalidades Avanzadas**
+- [ ] Machine Learning para predicciones académicas
+- [ ] Análisis de rendimiento comparativo
+- [ ] Sistema de recomendaciones personalizado
+- [ ] Integración con sistemas de videoconferencia
+
 ## 🤝 Contribución
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+### 📝 **Proceso de Contribución**
+1. **Fork** el repositorio
+2. **Crea** una rama: `git checkout -b feature/nueva-funcionalidad`
+3. **Commit** cambios: `git commit -m 'Add: nueva funcionalidad'`
+4. **Push** a la rama: `git push origin feature/nueva-funcionalidad`
+5. **Abre** un Pull Request
 
-## 📝 Licencia
+### 🎨 **Estándares de Código**
+- ESLint para JavaScript
+- Prettier para formateo
+- Comentarios JSDoc en funciones públicas
+- Tests unitarios para nuevas funcionalidades
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
+## 📞 Soporte y Contacto
 
-## 👥 Equipo
+### 🆘 **Soporte Técnico**
+- **Email**: support@trackademic.com
+- **GitHub Issues**: [Reportar problemas](repository-url/issues)
+- **Documentación**: [Wiki completa](repository-url/wiki)
 
-- **Backend Developer**: [Tu nombre]
+### 👥 **Equipo de Desarrollo**
+- **Lead Developer**: [Tu nombre]
+- **Backend Architect**: [Tu nombre]
+- **UI/UX Designer**: [Tu nombre]
 - **Database Designer**: [Tu nombre]
-- **API Designer**: [Tu nombre]
 
-## 📞 Soporte
+## 📄 Licencia
 
-Para soporte técnico:
-- Email: support@trackademic.com
-- Issues: [GitHub Issues](repository-url/issues)
-- Documentation: [Wiki](repository-url/wiki)
+Este proyecto está bajo la **Licencia MIT**. Ver `LICENSE` para detalles completos.
 
-## 🔄 Changelog
+## 🔄 Changelog Detallado
 
-### v1.0.0 (2024-01-01)
-- ✨ Implementación inicial del backend completo
-- 🔐 Sistema de autenticación con Supabase
-- 📊 Gestión de planes de evaluación
-- 📈 Sistema de calificaciones con proyecciones
-- 💬 Sistema colaborativo de comentarios
-- 📋 Informes y reportes avanzados
-- 📚 Documentación completa con Swagger
+### 🆕 **v1.2.0** (Actual) - Funcionalidades Estudiantiles
+- ✨ **Nuevo**: Tema claro forzado con enforcement automático
+- ✨ **Nuevo**: Documentación Swagger completa e interactiva
+- ✨ **Nuevo**: Sistema de planes personales para estudiantes
+- ✨ **Nuevo**: Calculadora de notas con proyecciones inteligentes
+- ✨ **Nuevo**: Dashboard estudiantil con estadísticas
+- ✨ **Nuevo**: Búsqueda avanzada de cursos con filtros
+- ✨ **Nuevo**: Reportes académicos personalizados
+- 🔧 **Mejorado**: Arquitectura de controladores documentada
+- 🔧 **Mejorado**: Sistema de roles enfocado en estudiantes
+- 🐛 **Corregido**: Errores de YAML en documentación Swagger
+- 🐛 **Corregido**: Problemas de configuración de servidor
+
+### 📚 **v1.1.0** - API Foundation
+- ✨ Sistema de autenticación con Supabase
+- ✨ Gestión básica de planes de evaluación
+- ✨ Sistema de calificaciones fundamental
+- ✨ Base de datos dual (SQL + NoSQL)
+
+### 🎯 **v1.0.0** - MVP Inicial
+- ✨ Implementación inicial del backend
+- ✨ Estructura básica de rutas y controladores
+- ✨ Configuración de base de datos
+- ✨ Sistema de logging básico
 
 ---
 
-¡Gracias por usar Trackademic! 🎓 
+## 🎓 ¡Bienvenido a Trackademic!
+
+**Sistema diseñado por estudiantes, para estudiantes**
+
+*Gestiona tus notas académicas de forma inteligente y mantén el control total de tu rendimiento estudiantil.*
+
+### 🌟 **Características Destacadas:**
+- 🎨 **Interfaz Clara**: Modo claro forzado para mejor legibilidad
+- 📊 **Inteligencia Académica**: Proyecciones automáticas de notas
+- 🔧 **API Documentada**: Swagger UI completo para desarrolladores
+- 👨‍🎓 **Enfoque Estudiantil**: Diseñado específicamente para estudiantes
+
+**¡Comienza tu gestión académica inteligente hoy mismo!** 🚀 

@@ -31,6 +31,29 @@ const requireRole = (...allowedRoles) => {
   };
 };
 
+/**
+ * @swagger
+ * /:
+ *   get:
+ *     summary: Página de inicio (landing)
+ *     description: Muestra la página principal de Trackademic. Si el usuario está autenticado, redirige al dashboard
+ *     tags: [Autenticación]
+ *     responses:
+ *       200:
+ *         description: Página de inicio cargada exitosamente
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               description: Página HTML de landing
+ *       302:
+ *         description: Usuario autenticado, redirigiendo al dashboard
+ *         headers:
+ *           Location:
+ *             schema:
+ *               type: string
+ *               example: "/dashboard"
+ */
 // Página de inicio (landing)
 router.get('/', (req, res) => {
   if (req.session.user) {
@@ -43,6 +66,42 @@ router.get('/', (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /login:
+ *   get:
+ *     summary: Página de inicio de sesión
+ *     description: Muestra el formulario de inicio de sesión. Si el usuario ya está autenticado, redirige al dashboard
+ *     tags: [Autenticación]
+ *     parameters:
+ *       - in: query
+ *         name: error
+ *         schema:
+ *           type: string
+ *         description: Mensaje de error a mostrar
+ *         example: "Credenciales inválidas"
+ *       - in: query
+ *         name: success
+ *         schema:
+ *           type: string
+ *         description: Mensaje de éxito a mostrar
+ *         example: "Registro exitoso. Verifica tu email."
+ *     responses:
+ *       200:
+ *         description: Formulario de login cargado exitosamente
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               description: Página HTML con formulario de login
+ *       302:
+ *         description: Usuario ya autenticado, redirigiendo al dashboard
+ *         headers:
+ *           Location:
+ *             schema:
+ *               type: string
+ *               example: "/dashboard"
+ */
 // Página de login
 router.get('/login', (req, res) => {
   if (req.session.user) {
@@ -55,6 +114,36 @@ router.get('/login', (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /register:
+ *   get:
+ *     summary: Página de registro
+ *     description: Muestra el formulario de registro para nuevos usuarios. Si el usuario ya está autenticado, redirige al dashboard
+ *     tags: [Autenticación]
+ *     parameters:
+ *       - in: query
+ *         name: error
+ *         schema:
+ *           type: string
+ *         description: Mensaje de error a mostrar
+ *         example: "Todos los campos son requeridos"
+ *     responses:
+ *       200:
+ *         description: Formulario de registro cargado exitosamente
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               description: Página HTML con formulario de registro
+ *       302:
+ *         description: Usuario ya autenticado, redirigiendo al dashboard
+ *         headers:
+ *           Location:
+ *             schema:
+ *               type: string
+ *               example: "/dashboard"
+ */
 // Página de registro
 router.get('/register', (req, res) => {
   if (req.session.user) {
@@ -67,121 +156,254 @@ router.get('/register', (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Procesar inicio de sesión
+ *     description: Autentica al usuario con email y contraseña usando Supabase, crea la sesión y redirige al dashboard
+ *     tags: [Autenticación]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       302:
+ *         description: Respuesta de redirección (éxito al dashboard o error al login)
+ *         headers:
+ *           Location:
+ *             schema:
+ *               type: string
+ *               examples:
+ *                 success: 
+ *                   value: "/dashboard"
+ *                   summary: Login exitoso
+ *                 error:
+ *                   value: "/login?error=Credenciales%20inválidas"
+ *                   summary: Error en credenciales
+ *                 server_error:
+ *                   value: "/login?error=Error%20interno%20del%20servidor"
+ *                   summary: Error del servidor
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *               example: "connect.sid=s%3A...; Path=/; HttpOnly"
+ */
 // Procesar login
 router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    // Autenticar con Supabase
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (error) {
-      return res.redirect('/login?error=' + encodeURIComponent('Credenciales inválidas'));
+    try {
+        const { email, password } = req.body;
+        
+        // Autenticar con Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+        
+        if (error) {
+            return res.redirect('/login?error=' + encodeURIComponent('Credenciales inválidas'));
+        }
+        
+        // Obtener información del usuario
+        const { data: userProfile } = await supabase
+            .from('employees')
+            .select(`
+                id, first_name, last_name, email, employee_type, faculty_code,
+                faculties:faculty_code (name)
+            `)
+            .eq('id', data.user.id)
+            .single();
+        
+        let userInfo = {
+            id: data.user.id,
+            email: data.user.email,
+            role: 'student',
+            token: data.session.access_token
+        };
+        
+        if (userProfile) {
+            let role = 'student';
+            if (userProfile.employee_type === 'Profesor') role = 'professor';
+            else if (userProfile.employee_type === 'Coordinador') role = 'coordinator';
+            else if (userProfile.employee_type === 'Administrador') role = 'admin';
+            
+            userInfo = {
+                ...userInfo,
+                firstName: userProfile.first_name,
+                lastName: userProfile.last_name,
+                role: role,
+                employeeType: userProfile.employee_type,
+                facultyCode: userProfile.faculty_code,
+                facultyName: userProfile.faculties?.name
+            };
+        }
+        
+        req.session.user = userInfo;
+        logger.info('Login web exitoso:', { userId: userInfo.id, email: userInfo.email });
+        
+        res.redirect('/dashboard');
+    } catch (error) {
+        logger.error('Error en login web:', error);
+        res.redirect('/login?error=' + encodeURIComponent('Error interno del servidor'));
     }
-    
-    // Obtener información del usuario
-    const { data: userProfile } = await supabase
-      .from('employees')
-      .select(`
-        id, first_name, last_name, email, employee_type, faculty_code,
-        faculties:faculty_code (name)
-      `)
-      .eq('id', data.user.id)
-      .single();
-    
-    let userInfo = {
-      id: data.user.id,
-      email: data.user.email,
-      role: 'student',
-      token: data.session.access_token
-    };
-    
-    if (userProfile) {
-      let role = 'student';
-      if (userProfile.employee_type === 'Profesor') role = 'professor';
-      else if (userProfile.employee_type === 'Coordinador') role = 'coordinator';
-      else if (userProfile.employee_type === 'Administrador') role = 'admin';
-      
-      userInfo = {
-        ...userInfo,
-        firstName: userProfile.first_name,
-        lastName: userProfile.last_name,
-        role: role,
-        employeeType: userProfile.employee_type,
-        facultyCode: userProfile.faculty_code,
-        facultyName: userProfile.faculties?.name
-      };
-    }
-    
-    req.session.user = userInfo;
-    logger.info('Login web exitoso:', { userId: userInfo.id, email: userInfo.email });
-    
-    res.redirect('/dashboard');
-  } catch (error) {
-    logger.error('Error en login web:', error);
-    res.redirect('/login?error=' + encodeURIComponent('Error interno del servidor'));
-  }
 });
 
+/**
+ * @swagger
+ * /register:
+ *   post:
+ *     summary: Procesar registro de usuario
+ *     description: Registra un nuevo usuario en el sistema usando Supabase Auth y crea automáticamente la sesión
+ *     tags: [Autenticación]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *     responses:
+ *       302:
+ *         description: Respuesta de redirección según resultado del registro
+ *         headers:
+ *           Location:
+ *             schema:
+ *               type: string
+ *               examples:
+ *                 auto_login:
+ *                   value: "/dashboard"
+ *                   summary: Registro con sesión automática
+ *                 email_verification:
+ *                   value: "/login?success=Registro%20exitoso.%20Verifica%20tu%20email."
+ *                   summary: Registro exitoso, verificar email
+ *                 validation_error:
+ *                   value: "/register?error=Todos%20los%20campos%20son%20requeridos"
+ *                   summary: Error de validación
+ *                 server_error:
+ *                   value: "/register?error=Error%20interno%20del%20servidor"
+ *                   summary: Error del servidor
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *               example: "connect.sid=s%3A...; Path=/; HttpOnly"
+ */
 // Procesar registro
 router.post('/register', async (req, res) => {
-  try {
-    const { email, password, firstName, lastName } = req.body;
-    
-    if (!email || !password || !firstName || !lastName) {
-      return res.redirect('/register?error=' + encodeURIComponent('Todos los campos son requeridos'));
-    }
-    
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          role: 'student'
+    try {
+        const { email, password, firstName, lastName } = req.body;
+        
+        if (!email || !password || !firstName || !lastName) {
+            return res.redirect('/register?error=' + encodeURIComponent('Todos los campos son requeridos'));
         }
-      }
-    });
-    
-    if (error) {
-      return res.redirect('/register?error=' + encodeURIComponent(error.message));
+        
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    role: 'student'
+                }
+            }
+        });
+        
+        if (error) {
+            return res.redirect('/register?error=' + encodeURIComponent(error.message));
+        }
+        
+        const userInfo = {
+            id: data.user.id,
+            email: data.user.email,
+            firstName,
+            lastName,
+            role: 'student',
+            token: data.session?.access_token
+        };
+        
+        if (data.session) {
+            req.session.user = userInfo;
+            res.redirect('/dashboard');
+        } else {
+            res.redirect('/login?success=' + encodeURIComponent('Registro exitoso. Verifica tu email.'));
+        }
+    } catch (error) {
+        logger.error('Error en registro web:', error);
+        res.redirect('/register?error=' + encodeURIComponent('Error interno del servidor'));
     }
-    
-    const userInfo = {
-      id: data.user.id,
-      email: data.user.email,
-      firstName,
-      lastName,
-      role: 'student',
-      token: data.session?.access_token
-    };
-    
-    if (data.session) {
-      req.session.user = userInfo;
-      res.redirect('/dashboard');
-    } else {
-      res.redirect('/login?success=' + encodeURIComponent('Registro exitoso. Verifica tu email.'));
-    }
-  } catch (error) {
-    logger.error('Error en registro web:', error);
-    res.redirect('/register?error=' + encodeURIComponent('Error interno del servidor'));
-  }
 });
 
+/**
+ * @swagger
+ * /logout:
+ *   post:
+ *     summary: Cerrar sesión
+ *     description: Destruye la sesión del usuario y redirige a la página principal
+ *     tags: [Autenticación]
+ *     security:
+ *       - SessionAuth: []
+ *     responses:
+ *       302:
+ *         description: Sesión cerrada, redirigiendo a la página principal
+ *         headers:
+ *           Location:
+ *             schema:
+ *               type: string
+ *               example: "/"
+ *           Set-Cookie:
+ *             schema:
+ *               type: string
+ *               example: "connect.sid=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+ */
 // Logout
 router.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      logger.error('Error en logout:', err);
-    }
-    res.redirect('/');
-  });
+    req.session.destroy((err) => {
+        if (err) {
+            logger.error('Error en logout:', err);
+        }
+        res.redirect('/');
+    });
 });
 
+/**
+ * @swagger
+ * /dashboard:
+ *   get:
+ *     summary: Dashboard principal del usuario
+ *     description: Muestra el panel principal personalizado según el rol del usuario autenticado (estudiante, profesor, coordinador, admin)
+ *     tags: [Dashboard]
+ *     security:
+ *       - SessionAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard cargado exitosamente
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               description: Página HTML del dashboard personalizado
+ *       302:
+ *         description: Usuario no autenticado, redirigiendo al login
+ *         headers:
+ *           Location:
+ *             schema:
+ *               type: string
+ *               example: "/login"
+ *       500:
+ *         description: Error interno del servidor
+ *         content:
+ *           text/html:
+ *             schema:
+ *               type: string
+ *               description: Página de error
+ */
 // Dashboard principal
 router.get('/dashboard', requireAuth, async (req, res) => {
   try {
