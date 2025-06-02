@@ -41,6 +41,11 @@ const evaluationPlanSchema = new mongoose.Schema({
     uppercase: true,
     maxlength: [10, 'El código de la materia no puede exceder 10 caracteres']
   },
+  subjectName: {
+    type: String,
+    trim: true,
+    maxlength: [200, 'El nombre de la materia no puede exceder 200 caracteres']
+  },
   groupNumber: {
     type: Number,
     required: [true, 'El número de grupo es requerido'],

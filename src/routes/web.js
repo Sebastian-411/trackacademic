@@ -1046,11 +1046,19 @@ router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans', req
       });
     }
 
+    // Obtener el nombre de la materia desde Supabase
+    const { data: subjectInfo } = await supabase
+      .from('subjects')
+      .select('name')
+      .eq('code', subjectCode.toUpperCase())
+      .single();
+
     // Crear el plan de evaluación
     const EvaluationPlan = require('../models/EvaluationPlan');
     const newPlan = new EvaluationPlan({
       semester,
       subjectCode: subjectCode.toUpperCase(),
+      subjectName: subjectInfo?.name || null,
       groupNumber: parseInt(groupNumber),
       professorId: req.session.user.id,
       academicYear: semester.split('-')[0], // Extraer el año del semestre (ej: "2023" de "2023-2")
@@ -2375,10 +2383,18 @@ router.post('/courses/:subjectCode/:semester/:groupNumber/evaluation-plans/versi
 
     const EvaluationPlan = require('../models/EvaluationPlan');
     
+    // Obtener el nombre de la materia desde Supabase
+    const { data: subjectInfo } = await supabase
+      .from('subjects')
+      .select('name')
+      .eq('code', subjectCode.toUpperCase())
+      .single();
+    
     // Preparar datos para crear la versión
     const versionData = {
       semester,
       subjectCode: subjectCode.toUpperCase(),
+      subjectName: subjectInfo?.name || null,
       groupNumber: parseInt(groupNumber),
       professorId: req.session.user.id,
       academicYear: semester.split('-')[0], // Extraer el año del semestre (ej: "2023" de "2023-2")
@@ -2599,22 +2615,33 @@ router.get('/api/my-plans', requireAuth, requireRole('student'), async (req, res
       studentId: req.session.user.id
     }).populate('evaluationPlanId').sort({ updatedAt: -1 });
 
-    // Transformar los datos para el frontend
-    const plans = myGrades.map(grade => ({
-      _id: grade.evaluationPlanId._id,
-      subjectCode: grade.subjectCode,
-      semester: grade.semester,
-      groupNumber: grade.groupNumber,
-      savedAt: grade.createdAt,
-      lastUpdated: grade.updatedAt,
-      currentGrade: grade.currentGrade,
-      progress: grade.progress,
-      isComplete: grade.isComplete
-    }));
+    // Enriquecer con información de materias desde Supabase
+    const enrichedPlans = await Promise.all(
+      myGrades.map(async (grade) => {
+        const { data: subjectInfo } = await supabase
+          .from('subjects')
+          .select('name')
+          .eq('code', grade.subjectCode)
+          .single();
+        
+        return {
+          _id: grade.evaluationPlanId._id,
+          subjectCode: grade.subjectCode,
+          subjectName: subjectInfo?.name || grade.subjectCode,
+          semester: grade.semester,
+          groupNumber: grade.groupNumber,
+          savedAt: grade.createdAt,
+          lastUpdated: grade.updatedAt,
+          currentGrade: grade.currentGrade,
+          progress: grade.progress,
+          isComplete: grade.isComplete
+        };
+      })
+    );
 
     res.json({
       success: true,
-      plans: plans
+      plans: enrichedPlans
     });
 
   } catch (error) {

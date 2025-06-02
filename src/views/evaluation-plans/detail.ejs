@@ -581,8 +581,21 @@
                 const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
                 const grade = parseFloat(gradeInput.value) || 0;
                 
-                if (grade && grade > 0) {
-                    currentContribution += (grade * activity.percentage) / 100;
+                // Validar que la nota esté en el rango válido (0-5)
+                const validatedGrade = Math.max(0, Math.min(5, grade));
+                
+                if (validatedGrade !== grade && grade > 0) {
+                    // Si la nota fue modificada por validación, mostrar advertencia y corregir el input
+                    console.warn(`Nota inválida detectada en cálculo: ${grade}. Corregida a: ${validatedGrade}`);
+                    gradeInput.value = validatedGrade;
+                    
+                    if (typeof showToast === 'function') {
+                        showToast(`Nota corregida de ${grade} a ${validatedGrade} (máximo permitido: 5.0)`, 'warning');
+                    }
+                }
+                
+                if (validatedGrade && validatedGrade > 0) {
+                    currentContribution += (validatedGrade * activity.percentage) / 100;
                     completedActivities++;
                 } else {
                     remainingPercentage += activity.percentage;
@@ -607,12 +620,25 @@
                     const gradeInput = document.querySelector('[data-activity-index="' + index + '"]');
                     const grade = parseFloat(gradeInput.value) || 0;
                     
+                    // Validar que la nota esté en el rango válido (0-5)
+                    const validatedGrade = Math.max(0, Math.min(5, grade));
+                    
+                    if (validatedGrade !== grade && grade > 0) {
+                        // Si la nota fue modificada por validación, mostrar advertencia y corregir el input
+                        console.warn(`Nota inválida detectada: ${grade}. Corregida a: ${validatedGrade}`);
+                        gradeInput.value = validatedGrade;
+                        
+                        if (typeof showToast === 'function') {
+                            showToast(`Nota corregida de ${grade} a ${validatedGrade} (máximo permitido: 5.0)`, 'warning');
+                        }
+                    }
+                    
                     grades.push({
                         activityIndex: index,
-                        grade: grade
+                        grade: validatedGrade
                     });
                     
-                    if (grade && grade > 0) {
+                    if (validatedGrade && validatedGrade > 0) {
                         hasAnyGrade = true;
                     }
                 });

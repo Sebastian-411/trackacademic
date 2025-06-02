@@ -47,12 +47,17 @@ function createPlanCard(plan) {
     const card = document.createElement('div');
     card.className = 'plan-item mb-3';
     
+    // Crear el título con código y nombre de materia
+    const subjectTitle = plan.subjectName && plan.subjectName !== plan.subjectCode 
+        ? `${plan.subjectCode} - ${plan.subjectName}`
+        : plan.subjectCode;
+    
     card.innerHTML = `
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h5 class="card-title mb-1">${plan.subjectCode}</h5>
+                        <h5 class="card-title mb-1">${subjectTitle}</h5>
                         <p class="text-muted mb-2">
                             ${plan.semester} • Grupo ${plan.groupNumber}
                         </p>

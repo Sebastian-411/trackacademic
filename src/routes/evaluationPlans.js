@@ -213,7 +213,7 @@ router.post('/', authenticate, async (req, res) => {
     const [subjectExists, groupExists] = await Promise.all([
       supabase
         .from('subjects')
-        .select('code')
+        .select('code, name')
         .eq('code', subjectCode.toUpperCase())
         .single(),
       supabase
@@ -244,6 +244,7 @@ router.post('/', authenticate, async (req, res) => {
     const planData = {
       semester,
       subjectCode: subjectCode.toUpperCase(),
+      subjectName: subjectExists.data?.name || null,
       groupNumber,
       professorId,
       academicYear: semester.split('-')[0], // Extraer el año del semestre
