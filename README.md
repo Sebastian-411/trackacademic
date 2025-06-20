@@ -1,7 +1,7 @@
 # Trackademic - Sistema de Gestión Académica
 
 **Sistema completo de gestión de notas y planes de evaluación académicos con enfoque estudiantil**
-
+aaaaaaaaaaaaaaaaaaaaaaaaaaaa
 ## 🚀 Características Principales
 
 ### ✨ Nuevas Funcionalidades Implementadas
