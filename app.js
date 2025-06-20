@@ -169,3 +169,5 @@ app.listen(PORT, () => {
 ✨ Estado: Listo para recibir conexiones
   `);
 }); 
+
+https://chatgpt.com/c/68552c7a-5ee8-8010-a886-60da9f627143
