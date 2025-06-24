@@ -506,3 +506,33 @@ exports.getPlanDetails = async (req, res) => {
         });
     }
 }; 
+
+
+exports.getPlanDetails = async (req, res) => {
+    try {
+        const { planId } = req.params;
+        
+        const plan = await StudentPlan.findOne({
+            _id: planId,
+            student: req.user._id
+        }).populate('originalPlan');
+
+        if (!plan) {
+            return res.status(404).json({
+                success: false,
+                message: 'Plan no encontrado'
+            });
+        }
+
+        res.json({
+            success: true,
+            plan: plan
+        });
+    } catch (error) {
+        console.error('Error al obtener detalles del plan:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener detalles del plan'
+        });
+    }
+}; 
